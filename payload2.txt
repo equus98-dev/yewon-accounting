@@ -1,0 +1,37 @@
+        <!-- 상단 헤더: 로고(좌측) / 제목(중앙) -->
+        <div style="position: relative; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; min-height: 50px;">
+          <div style="position: absolute; left: 0; top: 0;">
+            <img src="img/logo_Black.png" alt="로고" style="height: 40px;">
+          </div>
+          <div style="font-size: 38px; font-weight: 900; letter-spacing: 5px; color: #000; margin-top: -5px;">${title.replace(/ /g, '')}</div>
+        </div>
+
+        <!-- 문서번호 -->
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+          <span style="background-color: #d1d5db; color: #000; font-weight: bold; font-size: 14px; padding: 6px 20px; text-align: center;">문서번호</span>
+          <span style="font-weight: bold; font-size: 15px; margin-left: 15px;">산학협력단-${v.type==='income'?'수입':'지출'}-${v.id}</span>
+        </div>
+
+        <!-- 결재라인 -->
+        <div style="margin-bottom: 20px;">
+          <table class="approval-line-table" style="margin:0; width:50%; min-width:400px; border-collapse:collapse; text-align:center;">
+            <tr>
+              <th rowspan="2" style="background:#e5e7eb; width:40px; border:1px solid #000; padding:6px; font-weight:bold; font-size:13px; line-height:1.4;">결<br>재<br>라<br>인</th>
+              ${v.roles.map(r => `<th style="background:#e5e7eb; border:1px solid #000; padding:6px; font-weight:bold; font-size:14px;">${r}</th>`).join('')}
+            </tr>
+            <tr>
+              ${v.roles.map(r => {
+                let sigHtml = '';
+                if (v.approvals && v.approvals[r]) {
+                  if (v.approvalSignatures && v.approvalSignatures[r]) {
+                    sigHtml = `<img src="${v.approvalSignatures[r]}" style="max-height:45px; max-width:65px; object-fit:contain; mix-blend-mode:multiply;">`;
+                  } else {
+                    const name = v.approvalNames && v.approvalNames[r];
+                    sigHtml = name ? `<img src="img/sign_${name}.png" style="max-height:45px; max-width:65px; object-fit:contain; mix-blend-mode:multiply;" onerror="this.outerHTML='<span style=\\'font-size:11px;\\'>${name}</span>'">` : '(인)';
+                  }
+                }
+                return `<td class="sig-box" style="border:1px solid #000; height:60px; vertical-align:middle;">${sigHtml}</td>`;
+              }).join('')}
+            </tr>
+          </table>
+        </div>

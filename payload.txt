@@ -1,0 +1,39 @@
+        <!-- 상단 헤더: 로고 / 문서번호 / 결재라인 (좌측) + 제목 (우측) -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #000; padding-bottom:15px;">
+          <!-- 좌측: 로고 및 문서번호, 결재라인 -->
+          <div style="display:flex; flex-direction:column; gap:12px; width:360px;">
+            <div><img src="img/logo_Black.png" alt="로고" style="height:45px;"></div>
+            <div style="display:flex; align-items:center; margin-top:5px;">
+              <span style="background-color:#e5e5e5; font-weight:bold; padding:6px 15px; margin-right:15px; font-size:14px; min-width:80px; text-align:center;">문서번호</span>
+              <span style="font-weight:bold; font-size:15px;">산학협력단-${v.type==='income'?'수입':'지출'}-${v.id}</span>
+            </div>
+            <!-- 결재라인 -->
+            <table class="approval-line-table" style="margin:0; width:100%; border-collapse:collapse;">
+              <tr>
+                <th rowspan="2" class="approval-line-label" style="background:#e5e5e5; width:30px; border:1px solid #000;">결<br>재<br>라<br>인</th>
+                ${v.roles.map(r => `<th style="background:#e5e5e5; padding:6px 0; border:1px solid #000;">${r}</th>`).join('')}
+              </tr>
+              <tr>
+                ${v.roles.map(r => {
+                  let sigHtml = '';
+                  if (v.approvals && v.approvals[r]) {
+                    if (v.approvalSignatures && v.approvalSignatures[r]) {
+                      sigHtml = `<img src="${v.approvalSignatures[r]}" style="max-height:45px; max-width:65px; object-fit:contain; mix-blend-mode:multiply;">`;
+                    } else {
+                      const name = v.approvalNames && v.approvalNames[r];
+                      sigHtml = name ? `<img src="img/sign_${name}.png" style="max-height:45px; max-width:65px; object-fit:contain; mix-blend-mode:multiply;" onerror="this.outerHTML='<span style=\\'font-size:11px;\\'>${name}</span>'">` : '(인)';
+                    }
+                  }
+                  return `<td class="sig-box" style="height:50px; border:1px solid #000;">${sigHtml}</td>`;
+                }).join('')}
+              </tr>
+            </table>
+          </div>
+          
+          <!-- 우측: 제목 -->
+          <div style="flex:1; display:flex; justify-content:center; align-items:center; height:100%;">
+            <div style="margin:0; font-size:42px; letter-spacing:8px; font-weight:900;">${title.replace(/ /g, '')}</div>
+          </div>
+        </div>
+
+        

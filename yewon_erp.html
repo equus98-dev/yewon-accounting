@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>예원예술대학교 산학협력단 | 회계관리 시스템</title>
+  <meta name="description" content="예원예술대학교 산학협력단 간편 예결산 및 지출결의 관리 시스템">
+
+  <!-- 외부 라이브러리 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- 스타일 -->
+  <link rel="stylesheet" href="style.ce218cfa.css">
+  <!-- FullCalendar CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+  <style id="main-style">
+    /* 인쇄 참조용 */
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════
+     로그인 화면
+══════════════════════════════════════ -->
+  <div id="login-screen">
+    <div class="login-waves">
+      <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+        <defs>
+          <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+        </defs>
+        <g class="parallax">
+          <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255, 255, 255, 0.7)" />
+          <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(27, 94, 32, 0.7)" />
+          <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255, 255, 255, 0.3)" />
+          <use xlink:href="#gentle-wave" x="48" y="8" fill="rgba(163, 230, 53, 0.5)" />
+          <use xlink:href="#gentle-wave" x="48" y="10" fill="rgba(0, 31, 63, 0.4)" />
+          <use xlink:href="#gentle-wave" x="48" y="13" fill="#fff" />
+        </g>
+      </svg>
+    </div>
+    <div class="login-container">
+      <div class="login-card">
+
+        <div class="login-logo">
+          <img src="img/logo_Black.png" alt="예원예술대학교"
+            onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='inline-flex';">
+          <div id="logo-fallback" class="login-logo-fallback" style="display:none;">🏛️</div>
+        </div>
+
+        <div class="login-header-animate">
+          <h1 class="login-title">산학협력단 회계관리 시스템<span>Accounting ERP System</span></h1>
+        </div>
+
+        <div class="login-error" id="login-error"></div>
+
+        <div class="login-form">
+          <div class="form-group">
+            <label for="login-username">사번</label>
+            <input type="text" id="login-username" class="login-input" placeholder="사번을 입력하세요 (대소문자 구분)"
+              autocomplete="username"
+              onkeydown="if(event.key==='Enter') document.getElementById('login-password').focus()">
+          </div>
+          <div class="form-group">
+            <label for="login-password">비밀번호</label>
+            <div class="password-group">
+              <input type="password" id="login-password" class="login-input" placeholder="비밀번호를 입력하세요"
+                autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
+              <i class="fa-regular fa-eye-slash password-toggle" onclick="toggleLoginPassword(this)"></i>
+            </div>
+          </div>
+
+          <div class="security-info">
+            <span class="security-badge">
+              <i class="fa-solid fa-shield-halved"></i> 보안 로그인 활성화됨
+            </span>
+          </div>
+
+          <button class="login-btn" onclick="doLogin()">로그인</button>
+        </div>
+
+        <div class="login-footer">
+          계정이 없으시면 산학협력단에 문의하세요.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     메인 앱 (로그인 후 표시)
+══════════════════════════════════════ -->
+  <div class="app-layout" id="app-layout" style="display:none">
+
+    <!-- ── 사이드바 ── -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <a class="sidebar-logo" href="#" onclick="App.navigate('schedule'); return false;">
+          <div class="sidebar-logo-icon">
+            <div class="full-logo-group">
+              <img src="img/logo_white.png" alt="로고" class="sidebar-img-logo">
+              <span class="sidebar-logo-divider"
+                style="color: #ffffff !important; opacity: 1 !important; margin-top: -0.5mm; display: inline-block; vertical-align: middle;">|</span>
+              <span class="sidebar-org-name">산학협력단</span>
+            </div>
+            <div class="mini-logo">
+              <img src="img/logo.png" alt="미니 로고" style="width: 38px; height: auto;">
+            </div>
+          </div>
+        </a>
+      </div>
+      <button id="mini-toggle" onclick="App.toggleMiniSidebar()" aria-label="사이드바 접기">
+        <span class="toggle-text">메뉴감추기</span>
+        <i class="fa-solid fa-angles-left"></i>
+      </button>
+
+      <div class="sidebar-body">
+        <ul class="nav-list" id="sidebar-nav">
+          <!-- app.f4002ebb.js에서 동적 생성 -->
+        </ul>
+      </div>
+
+      <div class="sidebar-footer" id="sidebar-profile">
+        <!-- app.f4002ebb.js에서 동적 생성 -->
+      </div>
+
+      <!-- 스크롤 유도 아이콘 -->
+      <div class="sidebar-scroll-indicator">
+        <i class="fa-solid fa-chevron-down"></i>
+      </div>
+    </aside>
+
+    <!-- ── 메인 영역 ── -->
+    <div class="main-area">
+
+      <!-- 헤더 -->
+      <header id="app-header">
+        <div class="header-left">
+          <button id="sidebar-toggle" aria-label="메뉴">☰</button>
+          <div class="header-title-group">
+            <h1 class="header-main-title">
+              <span class="title-ko">회계관리시스템</span>
+              <span class="title-divider">|</span>
+              <span class="title-en" style="display: inline-block;">Accounting ERP System</span>
+              <span class="version-badge"
+                style="margin-left:8px; font-size:11px; background:var(--royal-blue); color:white; padding:2px 6px; border-radius:4px; vertical-align:middle; font-weight:600; opacity:0.8;">v22.3</span>
+            </h1>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="header-date" id="header-date"></span>
+          <div class="header-user" id="header-user-info"></div>
+          <button class="btn-logout" onclick="Auth.logout()">로그아웃</button>
+          <button class="btn btn-ghost btn-sm" id="btn-reset-data" style="display:none"
+            onclick="if(confirm('모든 데이터를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) { localStorage.clear(); location.reload(); }">
+            🗑️ 초기화
+          </button>
+        </div>
+
+        <!-- 물결무늬 애니메이션 -->
+        <div class="header-waves-container">
+          <svg class="header-waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+            <defs>
+              <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+            </defs>
+            <g class="parallax">
+              <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.7)" />
+              <use xlink:href="#gentle-wave" x="48" y="8" fill="rgba(27, 94, 32, 0.7)" />
+              <use xlink:href="#gentle-wave" x="48" y="10" fill="rgba(255,255,255,0.3)" />
+              <use xlink:href="#gentle-wave" x="48" y="17" fill="#fff" />
+            </g>
+          </svg>
+        </div>
+      </header>
+
+      <!-- 콘텐츠 -->
+      <main id="app-content">
+        <div style="text-align:center; padding:80px 20px; color:#94a3b8;">
+          <div style="font-size:48px; margin-bottom:16px;">⏳</div>
+          <p>로딩 중...</p>
+        </div>
+      </main>
+
+    </div><!-- /main-area -->
+
+  </div><!-- /app-layout -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.toggleSidebar()"></div>
+
+  <!-- 토스트 알림 -->
+  <div id="toast-container"></div>
+
+  <!-- 최상단 이동 버튼 -->
+  <button id="back-to-top" title="최상단으로 이동">▲ TOP</button>
+
+  <style>
+    /* 재무보고서/자산관리 메뉴 전용 연두색 스타일 */
+    .nav-item.special-green-item {
+      background: rgba(22, 163, 74, 0.08) !important;
+      border-left: 3px solid #22c55e !important;
+      margin-bottom: 4px;
+    }
+
+    .nav-item.special-green-item:hover {
+      background: rgba(22, 163, 74, 0.15) !important;
+    }
+
+    .nav-item.special-green-item.active {
+      background: linear-gradient(90deg, #16a34a, #22c55e) !important;
+      color: white !important;
+    }
+
+    .nav-item.special-green-item.active .nav-icon {
+      color: white !important;
+    }
+
+    #back-to-top {
+      display: none;
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 999;
+      border: none;
+      outline: none;
+      background: linear-gradient(135deg, #1e3a8a 0%, #166534 100%);
+      color: white;
+      cursor: pointer;
+      padding: 12px 18px;
+      border-radius: 50px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    #back-to-top.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #back-to-top:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+      filter: brightness(1.1);
+    }
+
+    #back-to-top:active {
+      transform: scale(0.95);
+    }
+
+    @media (max-width: 768px) {
+      #back-to-top {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 15px;
+      }
+    }
+  </style>
+
+  <!-- ── 스크립트 ── -->
+  <script src="utils/accounting-logic.414c9f0d.js"></script>
+  <script src="utils/db.798d86c9.js"></script>
+  <script src="utils/helpers.8315088b.js"></script>
+  <script src="utils/auth.b272538c.js"></script>
+  <script src="modules/dashboard.80e9eebc.js"></script>
+  <script src="modules/projects.c352e5c9.js"></script>
+  <script src="modules/project-accounts.ae8e4f4d.js"></script>
+  <script src="modules/excel-parser.d5c8eb19.js"></script>
+  <script src="modules/ledger.abdbebd9.js"></script>
+  <script src="modules/voucher.48c3b913.js"></script>
+  <script src="modules/budget-overview.2e92f005.js"></script>
+  <script src="modules/budget.a160e3ab.js"></script>
+  <script src="modules/project-budget.0ea4bf11.js"></script>
+  <script src="modules/operating-statement.2110476d.js"></script>
+  <script src="modules/balance-sheet.c7e83422.js"></script>
+  <script src="modules/cash-flow.70871c37.js"></script>
+  <script src="modules/cash-budget-report.d1dc24ac.js"></script>
+  <script src="modules/reports.ca61bb0c.js"></script>
+  <script src="modules/schedule.496c8353.js"></script>
+  <script src="modules/user-management.b9a0206b.js"></script>
+  <script src="modules/profile.2bf78181.js"></script>
+  <script src="modules/assets.fbcad93c.js"></script>
+  <script src="app.c2c24617.js"></script>
+  <script>
+    // 서비스 워커 등록 및 업데이트 로직
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                if (confirm('새로운 버전이 업데이트되었습니다. 페이지를 새로고침하시겠습니까?')) {
+                  location.reload();
+                }
+              }
+            };
+          };
+        });
+      });
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          location.reload();
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>

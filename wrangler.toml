@@ -1,0 +1,14 @@
+name = "yewon"
+compatibility_date = "2024-01-01"
+
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "accounting-db"
+database_id = "3a2c978b-e8a1-412b-84f4-608cc43c416b"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "yewon-attachments"
+

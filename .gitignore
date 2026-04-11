@@ -1,0 +1,13 @@
+node_modules/
+.wrangler/
+dist/
+.DS_Store
+*.log
+deploy_error*.txt
+deploy_log*.txt
+deploy_full_log.txt
+live_check.txt
+diag_result.txt
+d1_*.txt
+d1_*.json
+db_dump.json

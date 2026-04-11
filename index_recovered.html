@@ -1,0 +1,364 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>??????援 ?고????| ?怨愿由?????/title>
+    <meta name="description" content="??????援 ?고????媛???寃??諛?吏異寃??愿由?????>
+
+    <!-- ?몃? ?쇱대??щ?-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- ?ㅽ???-->
+    <link rel="stylesheet" href="style.7476193e.css">
+
+    <!-- FullCalendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <!-- jsPDF for compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style id="main-style">
+        /* ?몄 李몄“??*/
+    </style>
+</head>
+
+<body>
+    <!-- ?? ???罹≪? (吏??? -->
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            const errorMsg = "???????ㅻ? 諛?!\n\n硫?吏: " + msg + "\n?移: " + url + ":" + line + ":" + col + "\n\n??硫?吏瑜?罹≪????????二쇱??";
+            alert(errorMsg);
+            console.error(error);
+            return false;
+        };
+        window.onunhandledrejection = function(event) {
+            const errorMsg = "??鍮?湲?泥由??ㅻ? 諛?!\n\n??? " + (event.reason?.message || event.reason) + "\n\n??硫?吏瑜?罹≪????????二쇱??";
+            alert(errorMsg);
+            return false;
+        };
+    </script>
+
+    <!-- ??????????????????????????????????????
+     濡洹???硫?
+?????????????????????????????????????? -->
+    <div id="login-screen">
+
+        <div class="login-container">
+          <div class="login-card">
+
+            <!-- ??????μ 諛곕 -->
+            <div class="login-card-top">
+              <div class="login-deco-circle-1"></div>
+              <div class="login-deco-circle-2"></div>
+              <div class="login-deco-circle-3"></div>
+
+              <div class="login-logo">
+                <img src="img/logo.png" alt="??????援"
+                  onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='inline-flex';">
+                <div id="logo-fallback" class="login-logo-fallback" style="display:none;">?截?/div>
+              </div>
+
+              <div class="login-header-animate">
+                <h1 class="login-title">Accounting ERP System<span>?고?????怨愿由?????/span></h1>
+              </div>
+
+              <!-- ?吏???臾쇨껐 遺由??-->
+              <div class="login-wave-divider">
+                <svg class="login-animated-waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                  viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+                  <defs>
+                    <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+                  </defs>
+                  <g class="moving-waves">
+                    <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7)" />
+                    <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+                    <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+                    <use xlink:href="#gentle-wave" x="48" y="7" fill="#ffffff" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <!-- ????????? -->
+            <div class="login-card-bottom">
+              <div class="login-error" id="login-error"></div>
+
+              <div class="login-form">
+                <div class="form-group">
+                  <label for="login-username">?щ?</label>
+                  <div class="login-input-wrapper">
+                    <i class="fa-solid fa-user login-input-icon"></i>
+                    <input type="text" id="login-username" class="login-input" placeholder="?щ?????????
+                      autocomplete="username"
+                      onkeydown="if(event.key==='Enter') document.getElementById('login-password').focus()">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="login-password">鍮?踰??/label>
+                  <div class="login-input-wrapper password-group">
+                    <i class="fa-solid fa-lock login-input-icon"></i>
+                    <input type="password" id="login-password" class="login-input" placeholder="鍮?踰?몃???????
+                      autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
+                    <i class="fa-regular fa-eye-slash password-toggle" onclick="toggleLoginPassword(this)"></i>
+                  </div>
+                </div>
+                <div class="security-info">
+                  <span class="security-badge"><i class="fa-solid fa-shield-halved"></i> 蹂댁 濡洹???????/span>
+                </div>
+                <button class="login-btn" onclick="doLogin()">LOGIN</button>
+              </div>
+
+              <div class="login-footer">
+                怨??????硫??고???⑥ 臾몄????
+              </div>
+            </div>
+
+          </div>
+        </div>
+    </div>
+
+    <!-- ??????????????????????????????????????
+     硫?????? (濡洹??????)
+?????????????????????????????????????? -->
+    <div id="app-layout" class="app-layout" style="display: none;">
+        <!-- ?ъ?諛 -->
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <a class="sidebar-logo" href="#" onclick="App.navigate('schedule'); return false;">
+                    <div class="sidebar-logo-icon">
+                        <div class="full-logo-group">
+                            <img src="img/logo_white.png" alt="濡怨" class="sidebar-img-logo">
+                            <span class="sidebar-logo-divider"
+                                style="color: #ffffff !important; opacity: 1 !important; margin-top: -0.5mm; display: inline-block; vertical-align: middle;">|</span>
+                            <span class="sidebar-org-name">?고????/span>
+                        </div>
+                        <div class="mini-logo">
+                            <img src="img/logo.png" alt="誘몃 濡怨" style="width: 38px; height: auto;">
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <button id="mini-toggle" onclick="App.toggleMiniSidebar()" aria-label="?ъ?諛 ?湲?>
+                <span class="toggle-text">硫?닿?異湲?/span>
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
+
+            <div class="sidebar-body">
+                <ul class="nav-list" id="sidebar-nav">
+                    <!-- app.f4002ebb.js?? ?? ???-->
+                </ul>
+            </div>
+
+            <div class="sidebar-footer" id="sidebar-profile">
+                <!-- app.f4002ebb.js?? ?? ???-->
+            </div>
+
+            <!-- ?ㅽщ??? ??댁?-->
+            <div class="sidebar-scroll-indicator">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </aside>
+
+        <!-- 硫???? -->
+        <div class="main-area">
+            <!-- ?ㅻ -->
+            <header id="app-header">
+                <div class="header-left">
+                    <button id="sidebar-toggle" aria-label="硫??>??/button>
+                    <div class="header-title-group">
+                        <h1 class="header-main-title">
+                            <span class="title-ko">?怨愿由ъ?ㅽ</span>
+                            <span class="title-divider">|</span>
+                            <span class="title-en">Accounting ERP System</span>
+                            <span class="version-badge"
+                                style="margin-left:8px; font-size:11px; background:var(--royal-blue); color:white; padding:2px 6px; border-radius:4px; vertical-align:middle; font-weight:600; opacity:0.8;">v23.1</span>
+                            <span id="storage-usage-info"
+                                style="margin-left:12px; font-size:11px; color:#64748b; vertical-align:middle;">
+                                <i class="fa-solid fa-hard-drive"></i> 濡??以?..
+                            </span>
+                        </h1>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <span class="header-date" id="header-date"></span>
+                    <div class="header-user" id="header-user-info"></div>
+                    <button class="btn-logout" onclick="Auth.logout()">濡洹??</button>
+                    <button class="btn btn-ghost btn-sm" id="btn-backup-data"
+                        style="display:none; margin-left: 10px; color: #10b981; border: 1px solid #10b981;"
+                        onclick="helpers.exportDatabaseBackup()" title="PC??諛깆 ??????>???곗??諛깆</button>
+                    <button class="btn btn-ghost btn-sm" id="btn-restore-data"
+                        style="display:none; color: #3b82f6; border: 1px solid #3b82f6;"
+                        onclick="document.getElementById('db-restore-input').click()" title="PC?? ?곗??蹂듭">? ?곗??
+                        蹂듭</button>
+                    <input type="file" id="db-restore-input" style="display:none" accept=".json"
+                        onchange="helpers.importDatabaseBackup(event)">
+
+                </div>
+
+                <!-- 臾쇨껐臾대???硫???-->
+                <div class="header-waves-container">
+                    <svg class="header-waves" xmlns="http://www.w3.org/2000/svg"
+                        xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none"
+                        shape-rendering="auto">
+                        <defs>
+                            <path id="gentle-wave"
+                                d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+                        </defs>
+                        <g class="parallax">
+                            <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.7)" />
+                            <use xlink:href="#gentle-wave" x="48" y="8" fill="rgba(27, 94, 32, 0.7)" />
+                            <use xlink:href="#gentle-wave" x="48" y="10" fill="rgba(255,255,255,0.3)" />
+                            <use xlink:href="#gentle-wave" x="48" y="17" fill="#fff" />
+                        </g>
+                    </svg>
+                </div>
+            </header>
+
+            <!-- 肄?痢?-->
+            <main id="app-content">
+                <div style="text-align:center; padding:80px 20px; color:#94a3b8;">
+                    <div style="font-size:48px; margin-bottom:16px;">??/div>
+                    <p>濡??以?..</p>
+                </div>
+            </main>
+        </div> <!-- /main-area -->
+    </div> <!-- /app-layout -->
+
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.toggleSidebar()"></div>
+
+    <!-- ?????由?-->
+    <div id="toast-container"></div>
+
+    <!-- 理????대 踰??-->
+    <button id="back-to-top" title="理??⑥쇰??대">??TOP</button>
+
+    <script src="utils/accounting-logic.414c9f0d.js"></script>
+    <script src="utils/db.798d86c9.js"></script>
+    <script src="utils/helpers.8eed398a.js"></script>
+    <script src="utils/auth.b272538c.js"></script>
+    <script src="modules/dashboard.80e9eebc.js"></script>
+    <script src="modules/projects.d16dfb2a.js"></script>
+    <script src="modules/project-accounts.ae8e4f4d.js"></script>
+    <script src="modules/excel-parser.d5c8eb19.js"></script>
+    <script src="modules/ledger.cc7cca88.js"></script>
+    <script src="modules/voucher.92b92ed4.js"></script>
+    <script src="modules/budget-overview.2e2848e2.js"></script>
+    <script src="modules/budget.a160e3ab.js"></script>
+    <script src="modules/project-budget.5a59b25a.js"></script>
+    <script src="modules/operating-statement.2110476d.js"></script>
+    <script src="modules/balance-sheet.c7e83422.js"></script>
+    <script src="modules/cash-flow.70871c37.js"></script>
+    <script src="modules/cash-budget-report.d1dc24ac.js"></script>
+    <script src="modules/reports.ca61bb0c.js"></script>
+    <script src="modules/schedule.496c8353.js"></script>
+    <script src="modules/user-management.b9a0206b.js"></script>
+    <script src="modules/profile.2bf78181.js"></script>
+    <script src="modules/assets.fbcad93c.js"></script>
+    <script src="app.f4002ebb.js"></script>
+
+    <script>
+        // ?鍮???而??깅? 諛????댄?濡吏
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // ?濡???鍮???而ㅺ? ?ㅼ???-> ?ъ??寃??由ш굅? ?? 由щ???
+                                console.log('New content is available; please refresh.');
+                                if (confirm('?濡??踰??????댄???듬?? ??댁?瑜??濡怨移??寃??源?')) {
+                                    location.reload();
+                                }
+                            }
+                        };
+                    };
+                });
+            });
+
+            // 而⑦몃·?ш? 諛?硫?(??sw媛 ????硫? ?? ?濡怨移?
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    location.reload();
+                }
+            });
+        }
+
+        // 珥湲??諛??쇱?????
+        (async function init() {
+            try {
+                // 1. D1?? 紐⑤ ?곗??濡? (LocalStorage ????ъ?
+                await db.init();
+
+                // 2. 湲곕낯 愿由ъ 怨? ???(怨????? 寃쎌?
+                Auth.initDefaultAdmin();
+
+                // 3. 湲곗〈 ?몄 ???諛??? 濡洹??
+                if (Auth.isLoggedIn()) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-layout').style.display = 'flex';
+                    App.init();
+                }
+            } catch (e) {
+                console.error('Core init failed:', e);
+                alert('????珥湲??以??ㅻ?媛 諛?????? ?? ???ㅼ ????二쇱??');
+            }
+        })();
+
+        // 濡洹??泥由?
+        function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+
+            errorEl.classList.remove('show');
+
+            if (!username || !password) {
+                errorEl.textContent = '???? 鍮?踰?몃?????二쇱??';
+                errorEl.classList.add('show');
+                return;
+            }
+
+            const result = Auth.login(username, password);
+            if (!result.ok) {
+                errorEl.textContent = result.message;
+                errorEl.classList.add('show');
+                document.getElementById('login-password').value = '';
+                return;
+            }
+
+            // 濡洹???깃났 ??????
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-layout').style.display = 'flex';
+            App.init();
+        }
+
+        // 鍮?踰???? ??
+        function toggleLoginPassword(icon) {
+            const input = document.getElementById('login-password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        }
+    </script>
+</body>
+
+</html>

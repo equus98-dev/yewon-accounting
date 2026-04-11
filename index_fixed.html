@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>?덉썝?덉닠??숆탳 ?고븰?묐젰??| ?뚭퀎愿由??쒖뒪??/title>
+    <meta name="description" content="?덉썝?덉닠??숆탳 ?고븰?묐젰??媛꾪렪 ?덇껐??諛?吏異쒓껐??愿由??쒖뒪??>
+
+    <!-- ?몃? ?쇱씠釉뚮윭由?-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- ?ㅽ???-->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- FullCalendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <!-- jsPDF for compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style id="main-style">
+        /* ?몄뇙 李몄“??*/
+    </style>
+</head>
+
+<body>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            const errorMsg = "?슚 ?쒖뒪???ㅻ쪟 諛쒖깮!\n\n硫붿떆吏: " + msg + "\n?꾩튂: " + url + ":" + line + ":" + col;
+            alert(errorMsg);
+            console.error(error);
+            return false;
+        };
+        window.onunhandledrejection = function(event) {
+            const errorMsg = "?슚 鍮꾨룞湲?泥섎━ ?ㅻ쪟 諛쒖깮!\n\n?댁쑀: " + (event.reason?.message || event.reason);
+            alert(errorMsg);
+            return false;
+        };
+    </script>
+
+    <div id="login-screen">
+        <div class="login-container">
+          <div class="login-card">
+            <div class="login-card-top">
+              <div class="login-deco-circle-1"></div>
+              <div class="login-deco-circle-2"></div>
+              <div class="login-deco-circle-3"></div>
+              <div class="login-logo">
+                <img src="img/logo.png" alt="?덉썝?덉닠??숆탳" onerror="this.style.display='none';">
+              </div>
+              <div class="login-header-animate">
+                <h1 class="login-title">Accounting ERP System<span>?고븰?묐젰???뚭퀎愿由??쒖뒪??/span></h1>
+              </div>
+              <div class="login-wave-divider">
+                <svg class="login-animated-waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+                  <defs><path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" /></defs>
+                  <g class="moving-waves">
+                    <use href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7)" />
+                    <use href="#gentle-wave" x="48" y="7" fill="#ffffff" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+            <div class="login-card-bottom">
+              <div class="login-error" id="login-error"></div>
+              <div class="login-form">
+                <div class="form-group">
+                  <label for="login-username">?щ쾲</label>
+                  <input type="text" id="login-username" class="login-input" placeholder="?щ쾲???낅젰?섏꽭??>
+                </div>
+                <div class="form-group">
+                  <label for="login-password">鍮꾨?踰덊샇</label>
+                  <input type="password" id="login-password" class="login-input" placeholder="鍮꾨?踰덊샇瑜??낅젰?섏꽭??>
+                </div>
+                <button class="login-btn" onclick="doLogin()">LOGIN</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <div id="app-layout" class="app-layout" style="display: none;">
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <div class="full-logo-group">
+                    <img src="img/logo_white.png" alt="濡쒓퀬" class="sidebar-img-logo">
+                    <span class="sidebar-org-name">?고븰?묐젰??/span>
+                </div>
+            </div>
+            <div class="sidebar-body">
+                <ul class="nav-list" id="sidebar-nav"></ul>
+            </div>
+        </aside>
+
+        <div class="main-area">
+            <header id="app-header">
+                <div class="header-left">
+                    <h1 class="header-main-title">
+                        <span class="title-ko">?뚭퀎愿由ъ떆?ㅽ뀥</span>
+                        <span class="version-badge">v23.1</span>
+                    </h1>
+                </div>
+                <div class="header-right">
+                    <span id="header-date" class="header-date"></span>
+                    <div id="header-user-info" class="header-user"></div>
+                    <button class="btn-logout" onclick="Auth.logout()">濡쒓렇?꾩썐</button>
+                </div>
+            </header>
+            <main id="app-content">
+                <div style="text-align:center; padding:80px 20px; color:#94a3b8;">
+                    ??濡쒕뵫 以?..
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ?ㅽ겕由쏀듃 濡쒕뱶 (?댁떛 ?곸슜 ??湲곗큹 ?뚯씪紐낆쑝濡??곗꽑 蹂듦뎄) -->
+    <script src="utils/accounting-logic.js"></script>
+    <script src="utils/db.js"></script>
+    <script src="utils/helpers.js"></script>
+    <script src="utils/auth.js"></script>
+    <script src="modules/dashboard.js"></script>
+    <script src="modules/projects.js"></script>
+    <script src="modules/project-accounts.js"></script>
+    <script src="modules/excel-parser.js"></script>
+    <script src="modules/ledger.js"></script>
+    <script src="modules/voucher.js"></script>
+    <script src="modules/budget-overview.js"></script>
+    <script src="modules/budget.js"></script>
+    <script src="modules/project-budget.js"></script>
+    <script src="modules/operating-statement.js"></script>
+    <script src="modules/balance-sheet.js"></script>
+    <script src="modules/cash-flow.js"></script>
+    <script src="modules/cash-budget-report.js"></script>
+    <script src="modules/reports.js"></script>
+    <script src="modules/schedule.js"></script>
+    <script src="modules/user-management.js"></script>
+    <script src="modules/profile.js"></script>
+    <script src="modules/assets.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        (async function init() {
+            try {
+                await db.init();
+                Auth.initDefaultAdmin();
+                if (Auth.isLoggedIn()) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-layout').style.display = 'flex';
+                    App.init();
+                }
+            } catch (e) {
+                console.error('Init failed:', e);
+            }
+        })();
+
+        function doLogin() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const result = Auth.login(username, password);
+            if (result.ok) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-layout').style.display = 'flex';
+                App.init();
+            } else {
+                alert(result.message);
+            }
+        }
+    </script>
+</body>
+</html>
