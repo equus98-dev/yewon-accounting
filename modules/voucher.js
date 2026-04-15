@@ -336,7 +336,7 @@ const VoucherModule = (() => {
               `).join('')}
         </div>
 
-        <h4 class="section-title">3. 내부기안(문서) 첨부 <span style="font-size:12px; font-weight:bold; color:#ef4444;">(필수사항)</span></h4>
+        <h4 class="section-title">3. 내부기안(문서) 첨부 <span style="font-size:12px; font-weight:normal; color:var(--text-muted);">(선택사항)</span></h4>
         <div id="v-dropzone-draft" style="padding:15px; background:rgba(99,102,241,0.03); border-radius:8px; border:2px dashed #cbd5e1; margin-bottom:15px; transition: all 0.2s;"
           ondragover="event.preventDefault(); this.style.borderColor='var(--primary)'; this.style.background='rgba(99,102,241,0.08)';"
           ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='rgba(99,102,241,0.03)';"
@@ -865,12 +865,6 @@ const VoucherModule = (() => {
     if (selectedIds.size === 0) { 
         if (!isAuto) helpers.showToast('내역을 선택해 주세요.', 'error'); 
         return; 
-    }
-    
-    // 증빙 서류 필수 체크 (내부기안 파일이 있는지 확인)
-    if (uploadedFiles.length === 0) {
-        if (!isAuto) helpers.showToast('증빙 서류(내부기안 등)를 필수로 첨부해 주세요.', 'error');
-        return;
     }
     
 
