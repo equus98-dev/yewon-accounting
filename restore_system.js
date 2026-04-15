@@ -104,7 +104,7 @@ const indexHtml = `<!DOCTYPE html>
                 <div class="header-left">
                     <h1 class="header-main-title">
                         <span class="title-ko">회계관리시스템</span>
-                        <span class="version-badge">v22.3</span>
+                        <span class="version-badge">v23.10</span>
                     </h1>
                 </div>
                 <div class="header-right">

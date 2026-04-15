@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- 스타일 -->
-    <link rel="stylesheet" href="style.ce218cfa.css">
+    <link rel="stylesheet" href="style.2f15fd76.css">
 
     <!-- FullCalendar CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
@@ -24,6 +24,7 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- jsPDF for compression -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -120,7 +121,7 @@
 
               <div class="login-footer">
                 계정이 없으시면 산학협력단에 문의하세요.
-                <div style="margin-top: 10px; opacity: 0.6; font-size: 11px; letter-spacing: 1px;">SYSTEM VERSION v22.3</div>
+                <div style="margin-top: 10px; opacity: 0.6; font-size: 11px; letter-spacing: 1px;">SYSTEM VERSION v23.11</div>
               </div>
             </div>
 
@@ -167,7 +168,7 @@
             <!-- 스크롤 유도 아이콘 -->
             <div class="sidebar-scroll-indicator">
                 <i class="fa-solid fa-chevron-down"></i>
-            <div class="sidebar-version" style="position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 10px; opacity: 0.3; color: #fff; pointer-events: none;">v22.3</div>
+            <div class="sidebar-version" style="position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 10px; opacity: 0.3; color: #fff; pointer-events: none;">v23.1</div>
         </aside>
 
         <!-- 메인 영역 -->
@@ -182,7 +183,7 @@
                             <span class="title-divider">|</span>
                             <span class="title-en">Accounting ERP System</span>
                             <span class="version-badge"
-                style="margin-left:8px; font-size:11px; background:var(--royal-blue); color:white; padding:2px 6px; border-radius:4px; vertical-align:middle; font-weight:600; opacity:0.8;">v22.3</span>
+                style="margin-left:8px; font-size:11px; background:var(--royal-blue); color:white; padding:2px 6px; border-radius:4px; vertical-align:middle; font-weight:600; opacity:0.8;">v23.1</span>
                             <span id="storage-usage-info"
                                 style="margin-left:12px; font-size:11px; color:#64748b; vertical-align:middle;">
                                 <i class="fa-solid fa-hard-drive"></i> 로딩 중...
@@ -245,20 +246,20 @@
 
     <script src="utils/accounting-logic.414c9f0d.js"></script>
     <script src="utils/db.798d86c9.js"></script>
-    <script src="utils/helpers.8315088b.js"></script>
+    <script src="utils/helpers.d88bce51.js"></script>
     <script src="utils/auth.b272538c.js"></script>
     <script src="modules/dashboard.80e9eebc.js"></script>
-    <script src="modules/projects.c352e5c9.js"></script>
+    <script src="modules/projects.0df07453.js"></script>
     <script src="modules/project-accounts.ae8e4f4d.js"></script>
     <script src="modules/excel-parser.d5c8eb19.js"></script>
-    <script src="modules/ledger.abdbebd9.js"></script>
-    <script src="modules/voucher.48c3b913.js"></script>
+    <script src="modules/ledger.2f8f85ec.js"></script>
+    <script src="modules/voucher.76fe7988.js"></script>
     <script src="modules/budget-overview.2e92f005.js"></script>
-    <script src="modules/budget.a160e3ab.js"></script>
-    <script src="modules/project-budget.0ea4bf11.js"></script>
-    <script src="modules/operating-statement.2110476d.js"></script>
-    <script src="modules/balance-sheet.c7e83422.js"></script>
-    <script src="modules/cash-flow.70871c37.js"></script>
+    <script src="modules/budget.5674ceb2.js"></script>
+    <script src="modules/project-budget.34560c12.js"></script>
+    <script src="modules/operating-statement.5463e127.js"></script>
+    <script src="modules/balance-sheet.9c8ededd.js"></script>
+    <script src="modules/cash-flow.55789406.js"></script>
     <script src="modules/cash-budget-report.d1dc24ac.js"></script>
     <script src="modules/reports.ca61bb0c.js"></script>
     <script src="modules/schedule.496c8353.js"></script>
@@ -317,6 +318,54 @@
                 alert('시스템 초기화 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
             }
         })();
+
+        async function analyzeDraftWithAI(base64Data) {
+            try {
+              helpers.showToast('이미지에서 텍스트를 인식하고 있습니다. 잠시만 기다려 주세요...', 'info', 6000);
+              
+              // Tesseract.js를 이용한 클라이언트 사이드 OCR
+              const result = await Tesseract.recognize(base64Data, 'kor+eng', {
+                logger: m => console.log(m)
+              });
+              
+              const fullText = result.data.text;
+              console.log('OCR Extracted Text:', fullText);
+
+              let title = '';
+              let docNo = '';
+
+              // 1. 제목 추출 (키워드 매칭)
+              const titleMatch = fullText.match(/제\s*목\s*[:\s]+([^\n]+)/) || fullText.match(/제목\s*[:\s]+([^\n]+)/);
+              if (titleMatch) title = titleMatch[1].trim();
+
+              // 2. 문서번호(시행) 추출
+              const docNoMatch = fullText.match(/(?:시\s*행|시행)\s*[:\s]*([^\s(]+-[^\s(]+)/) || 
+                                 fullText.match(/(?:시\s*행|시행)\s*([가-힣a-zA-Z\s]*\([가-힣\s]*\))?(-|\s)*(\d+)/);
+              if (docNoMatch) {
+                  docNo = docNoMatch[0].replace(/시\s*행|시행/g, '').trim();
+              }
+
+              let filledCount = 0;
+              if (title) {
+                document.getElementById('v-draft-title').value = title;
+                filledCount++;
+              }
+              if (docNo) {
+                document.getElementById('v-draft-doc-no').value = docNo;
+                filledCount++;
+              }
+
+              if (filledCount > 0) {
+                helpers.showToast(`이미지에서 ${filledCount}개 정보를 인식했습니다.`, 'success');
+                prepareVoucher(true);
+              } else {
+                helpers.showToast('텍스트를 찾지 못했습니다. 화질이 좋은 사진으로 다시 시도해 주세요.', 'info');
+              }
+            } catch (err) {
+              console.error('OCR Failed:', err);
+              helpers.showToast('문자 인식에 실패했습니다. 수동으로 입력해 주세요.', 'warning');
+            }
+          }
 
         // 로그인 처리
         function doLogin() {

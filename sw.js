@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yewon-erp-v25.0';
+const CACHE_NAME = 'yewon-erp-v26.21';
 
 // 서비스 워커 설치 시 즉시 활성화
 self.addEventListener('install', (event) => {
@@ -21,9 +21,8 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// 네트워크 우선 전략 (또는 캐시 무시 전략 - 해시 파일 덕분에 항상 새 파일임)
+// 네트워크 우선 전략
 self.addEventListener('fetch', (event) => {
-    // 해시 파일은 브라우저 캐시를 써도 되지만, sw 캐시는 신중히 처리
     event.respondWith(
         fetch(event.request).catch(() => {
             return caches.match(event.request);

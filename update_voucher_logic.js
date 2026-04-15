@@ -16,7 +16,7 @@ content = content.replace(
 // 3. 문서번호 포맷 변경 (결의서 HTML 내)
 content = content.replace(
   /산학협력단-\$\{v\.type==='income'\?'수입':'지출'\}-\$\{v\.id\}/g,
-  "산단-${v.type==='income'?'수입':'지출'}-${date.getFullYear()}-${String(v.id).padStart(4, '0')}"
+  "산단-${v.type==='income'?'수입':'지출'}-${date.getFullYear()}-${String(v.id).split('-').pop().padStart(4, '0')}"
 );
 
 // 4. 첨부 파일 UI 변경

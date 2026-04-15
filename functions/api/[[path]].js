@@ -149,5 +149,55 @@ export async function onRequest(context) {
 
 
 
+  // 3. AI 이미지 분석 (내부기안 추출) (POST /api/ai/analyze-draft)
+  if (path === '/api/ai/analyze-draft' && request.method === 'POST') {
+    try {
+      const { image, filename } = await request.json(); // image는 base64 string
+      if (!image) throw new Error('Image data is required');
+      if (!env.AI) throw new Error('AI binding is not configured');
+
+      // Base64를 Uint8Array로 더 효율적으로 변환
+      const base64Content = image.split(',')[1] || image;
+      const binaryString = atob(base64Content);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const prompt = `이 이미지는 한국의 대학 또는 공공기관에서 사용하는 '내부기안' 또는 '공문' 문서입니다.
+이미지에서 다음 두 가지 정보를 찾아내어 JSON 형식으로 응답하세요:
+1. doc_no: '시행' 글자 옆의 문서번호
+2. title: '제목' 글자 옆의 제목
+
+결과 예시: {"doc_no": "산학협력단-123", "title": "비품 구입의 건"}
+응답은 오직 JSON만 하세요.`;
+
+      // Workers AI 실행 (가장 안정적인 Phi-3 Vision 모델로 교체)
+      const aiResponse = await env.AI.run('@cf/microsoft/phi-3-vision-128k-instruct', {
+        prompt,
+        image: Array.from(bytes)
+      });
+
+      // AI 응답 파싱
+      let result = { doc_no: '', title: '' };
+      const text = aiResponse.response || aiResponse.description || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          result = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.error('JSON Parse Error:', e);
+        }
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (err) {
+      console.error('AI Analysis Error:', err);
+      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    }
+  }
+
   return new Response('Not Found', { status: 404 });
 }

@@ -330,7 +330,7 @@ const LedgerModule = (() => {
                   <button class="btn-icon btn-edit" onclick="LedgerModule.openEditModal('${e.id}')" title="수정">✏️</button>
                   <button class="btn-icon btn-delete" onclick="LedgerModule.deleteEntry('${e.id}')" title="삭제">🗑️</button>
                 `}
-                <button class="btn-icon" onclick="LedgerModule.openVoucher('${e.id}', '${e.type}')" title="결의서">📄</button>
+                <button class="btn-icon ${helpers.isEntryLocked(e.id) ? '' : 'blink'}" onclick="LedgerModule.openVoucher('${e.id}', '${e.type}')" title="${helpers.isEntryLocked(e.id) ? '결의서 조회' : '결의서 미작성 (작성 필요)'}">📄</button>
               </div>
             </td>
           </tr>

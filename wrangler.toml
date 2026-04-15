@@ -12,3 +12,6 @@ database_id = "3a2c978b-e8a1-412b-84f4-608cc43c416b"
 binding = "BUCKET"
 bucket_name = "yewon-attachments"
 
+[ai]
+binding = "AI"
+

@@ -340,7 +340,7 @@ window.helpers = {
             const url = URL.createObjectURL(blob);
 
             // 1. 우선 iframe 시도 (PC 브라우저에서 가장 깔끔함)
-            container.innerHTML = `<iframe src="${url}" style="width:100%; height:800px; border:none;"></iframe>`;
+            container.innerHTML = `<iframe src="${url}#navpanes=0" style="width:100%; height:800px; border:none;"></iframe>`;
 
             // 2. 모바일이거나 iframe이 제한적일 수 있으므로 PDF.js 버튼 제안 또는 자동 렌더링 고려
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);

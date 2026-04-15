@@ -12,6 +12,31 @@ const VoucherModule = (() => {
     let selectedRoles = ['담당', '팀장', '산학협력단장'];
     const BUDGET_YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
 
+    // [최적화용] 이미지 상단과 하단만 크롭하여 병합하는 유틸리티
+    function cropImageSections(base64Data, topRatio = 0.3, bottomRatio = 0.3) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = base64Data;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const topH = img.height * topRatio;
+          const bottomH = img.height * bottomRatio;
+          
+          canvas.width = img.width;
+          canvas.height = topH + bottomH;
+          
+          // 상단 영역 그리기
+          ctx.drawImage(img, 0, 0, img.width, topH, 0, 0, img.width, topH);
+          // 하단 영역을 상단 바로 아래에 이어 그리기
+          ctx.drawImage(img, 0, img.height - bottomH, img.width, bottomH, 0, topH, img.width, bottomH);
+          
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+        };
+        img.onerror = () => resolve(base64Data);
+      });
+    }
+
     function render() {
       try {
         const appContent = document.getElementById('app-content');
@@ -93,59 +118,93 @@ const VoucherModule = (() => {
       container.innerHTML = `
         <div class="card">
           <div class="table-wrapper">
-            <table class="data-table">
+            <table class="data-table" style="table-layout: fixed; width: 100%;">
               <thead>
                 <tr>
                   <th class="text-center" style="width:120px">결의번호</th>
-                  <th class="text-center" style="width:250px">과제명</th>
+                  <th class="text-center" style="width:200px">과제명 / 지출내용</th>
                   <th class="text-center" style="width:80px">유형</th>
                   <th class="text-center" style="width:100px">업무담당</th>
                   <th class="text-center" style="width:100px">작성일</th>
-                  <th class="text-right" style="width:140px">합계금액</th>
+                  <th class="text-right" style="width:110px">합계금액</th>
                   <th class="text-center" style="width:120px">결재라인</th>
-                  <th class="text-center" style="width:100px">관리</th>
+                  <th class="text-center" style="width:130px">관리</th>
                 </tr>
               </thead>
               <tbody>
                 ${vouchers.map(v => {
-                  const needsApproval = userRank && Array.isArray(v.roles) && v.roles.includes(userRank) && userRank !== '담당' && !(v.approvals && v.approvals[userRank]);
+                  const author = getAuthorInfo(v);
+                  const userSession = window.Auth?.getSession();
+                  const isAdmin = userSession?.role === 'admin';
+                  const isAuthor = userSession && (userSession.username === author.id || userSession.userId === author.id || (userRank === '담당' && !v.authorId));
+                  
+                  const isFullyApproved = Array.isArray(v.roles) && v.roles.every(r => v.approvals && v.approvals[r]);
+                  const alreadyApproved = v.approvals && v.approvals[userRank];
+
+                  // 결재 버튼 표시 조건: 승인이 필요하거나, 관리자이거나, 담당자 본인이면서 수기결재를 위해 상신 상태인 경우
+                  const canShowApprovalBtn = (userRank && Array.isArray(v.roles) && v.roles.includes(userRank) && !alreadyApproved) || isAdmin || (userRank === '담당' && isAuthor && !isFullyApproved);
+                  
+                  const noHigherApproval = !Object.keys(v.approvals || {}).some(r => r !== '담당' && v.approvals[r]);
+                  const canEditNow = (isAdmin || isAuthor) && noHigherApproval;
+                  const canDeleteNow = isAdmin || isAuthor;
+
+                  // 결재라인 HTML 사전 계산 (중첩 템플릿 리터럴 오류 방지)
+                  const hasManual = Object.values(v.approvalSignatures || {}).includes('수기결재');
+                  let approvalLineHtml;
+                  if (hasManual) {
+                    const rolesStr = (Array.isArray(v.roles) ? v.roles : []).map(function(r){ return r.slice(0,2); }).join('-');
+                    approvalLineHtml = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.1;">'
+                      + '<div style="font-size:10px;color:#555;">' + rolesStr + '</div>'
+                      + '<div style="font-size:10px;font-weight:700;color:#d97706;background:#fef3c7;padding:1px 4px;border-radius:3px;">↳ 수기결재</div>'
+                      + '</div>';
+                  } else {
+                    approvalLineHtml = '<div style="display:flex;justify-content:center;gap:2px">'
+                      + (Array.isArray(v.roles) ? v.roles : []).map(function(r) {
+                          var isApproved = v.approvals && v.approvals[r];
+                          var isMyApproval = isApproved && userRank === r && r !== '담당';
+                          var badgeClass = isApproved ? 'badge-success' : 'badge-neutral';
+                          var clickAttr = isMyApproval ? ' onclick="VoucherModule.cancelApproval(\'' + v.id + '\', \'' + r + '\')"' : '';
+                          var titleTxt = r + (isApproved ? ' (결재완료)' : '') + (isMyApproval ? ' - 클릭하여 결재 취소' : '');
+                          return '<span class="badge ' + badgeClass + '" style="font-size:11px;padding:2px 6px;cursor:' + (isMyApproval ? 'pointer' : 'default') + ';" title="' + titleTxt + '"' + clickAttr + '>'
+                            + r.slice(0,2) + (isMyApproval ? ' ↩' : '') + '</span>';
+                        }).join('')
+                      + '</div>';
+                  }
+
                   return `
                   <tr>
                     <td class="mono font-bold text-center">
                       <a href="javascript:void(0)" onclick="VoucherModule.viewVoucher('${v.id}')" style="color:var(--royal-blue); text-decoration:underline; cursor:pointer;">${v.id}</a>
                     </td>
-                    <td class="text-truncate" style="max-width:250px" title="${v.projectName || ''}">${v.projectName || '-'}</td>
+                    <td style="max-width:200px; padding: 12px 16px;">
+                      <div class="text-truncate" style="color:var(--royal-blue); font-weight:600; margin-bottom:4px;" title="${v.projectName || ''}">${v.projectName || '-'}</div>
+                      <div class="text-truncate" style="font-size:13px; color:#555;" title="${v.title || ''}">${v.title || '-'}</div>
+                    </td>
                     <td class="text-center">
                       <span class="badge ${v.type === 'income' ? 'badge-success' : 'badge-danger'}" style="font-size:12px; padding:4px 8px;">
                          ${v.type === 'income' ? '수입' : '지출'}
                       </span>
                     </td>
-                    <td class="text-center">${v.manager || v.authorName || '-'}</td>
+                    <td class="text-center">${author.name}</td>
                     <td class="text-center">${v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '-'}</td>
                     <td class="text-right ${v.type === 'income' ? 'text-success' : 'text-danger'} fw-bold" style="white-space:nowrap">${_helpers.formatCurrencyRaw(v.totalAmount)}원</td>
+                    <td class="text-center">${approvalLineHtml}</td>
                     <td class="text-center">
-                      <div style="display:flex; justify-content:center; gap:2px">
-                        ${(Array.isArray(v.roles) ? v.roles : []).map(r => {
-                          const isApproved = v.approvals && v.approvals[r];
-                          const isMyApproval = isApproved && userRank === r && r !== '담당';
-                          return `<span class="badge ${isApproved ? 'badge-success' : 'badge-neutral'}" 
-                          style="font-size:11px; padding:2px 6px; cursor:${isMyApproval ? 'pointer' : 'default'};" 
-                          title="${r}${isApproved ? ' (결재완료)' : ''}${isMyApproval ? ' - 클릭하여 결재 취소' : ''}"
-                          ${isMyApproval ? `onclick="VoucherModule.cancelApproval('${v.id}', '${r}')"` : ''}>
-                          ${r.slice(0, 2)}${isMyApproval ? ' ↩' : ''}
-                        </span>`;
-                        }).join('')}
-                      </div>
-                    </td>
-                    <td class="text-center">
-                      <div class="action-btns" style="justify-content:center">
-                        ${needsApproval
-                          ? `<button class="btn btn-primary" style="padding:4px 8px; font-size:12px; border-radius:4px;" onclick="VoucherModule.approveVoucher('${v.id}', '${userRank}')">결재하기</button>`
-                          : (userRank && Array.isArray(v.roles) && v.roles.includes(userRank) && userRank !== '담당' && v.approvals && v.approvals[userRank]
-                            ? `<button class="btn btn-neutral" style="padding:4px 8px; font-size:12px;" disabled>결재완료</button>`
-                            : `<button class="btn btn-ghost btn-sm" onclick="VoucherModule.viewVoucher('${v.id}')" title="조회">보기</button>`)
-                        }
-                        <button class="btn btn-ghost btn-sm" style="color:#ef4444;" onclick="VoucherModule.deleteVoucher('${v.id}')" title="삭제">🗑️</button>
+                      <div class="action-btns" style="justify-content:center; gap:5px;">
+                        ${canShowApprovalBtn 
+                            ? `<button class="btn btn-primary btn-sm" style="padding:4px 8px; font-size:12px; background:#2563eb;" onclick="VoucherModule.approveVoucher('${v.id}', '${userRank}')">결재</button>` 
+                            : `<button class="btn btn-ghost btn-sm" onclick="VoucherModule.viewVoucher('${v.id}')" title="조회">보기</button>`}
+                        
+                        ${(isAdmin || isAuthor) && !isFullyApproved
+                            ? `<button class="btn btn-sm" style="background:#f59e0b; color:white; padding:4px 8px; font-size:12px; border:none; border-radius:4px;" onclick="VoucherModule.executeManualBypass('${v.id}'); VoucherModule.render();" title="수기결재 통과">수기</button>`
+                            : ''}
+
+                        ${canEditNow 
+                            ? `<button class="btn btn-ghost btn-sm" style="color:var(--royal-blue); padding:4px 8px; font-size:12px;" onclick="VoucherModule.editVoucher('${v.id}')" title="수정">수정</button>` 
+                            : ''}
+                        ${canDeleteNow 
+                            ? `<button class="btn btn-ghost btn-sm" style="color:#ef4444;" onclick="VoucherModule.deleteVoucher('${v.id}')" title="삭제">🗑️</button>` 
+                            : ''}
                       </div>
                     </td>
                 `;
@@ -159,17 +218,55 @@ const VoucherModule = (() => {
 
 
 
-  function openNewVoucher(initialType = 'expense', initialEntryId = null) {
-    try {
-      selectedIds.clear();
-      if (initialEntryId) {
-        selectedIds.add(initialEntryId);
-        const entries = db.getLedger();
-        const entry = entries.find(e => e.id === initialEntryId);
-        if (entry) initialType = entry.type;
+  function getAuthorInfo(v) {
+    const session = window.Auth?.getSession();
+    const currentUser = session ? (window.Auth?.getUsers() || []).find(u => u.id === session.userId) : null;
+    
+    let id = v.authorId;
+    let name = v.authorName;
+    
+    // 소급 적용 로직
+    if (!id || !name) {
+      // 1. 담당 결재자 이름 확인
+      name = v.approvalNames?.['담당'] || v.manager || name;
+      // 2. 이름을 통해 사번(ID) 역추적
+      if (name && !id) {
+        const authorUser = (window.Auth?.getUsers() || []).find(u => u.name === name);
+        id = authorUser?.username || authorUser?.id;
       }
-      selectedRoles = ['담당', '팀장', '산학협력단장'];
-      uploadedFiles = []; // 파일 목록 초기화
+    }
+    
+    return {
+      id: id || currentUser?.username || currentUser?.id || '-',
+      name: name || currentUser?.name || '-'
+    };
+  }
+
+
+  function openNewVoucher(initialType = 'expense', initialEntryId = null, existingVoucherId = null) {
+    try {
+      if (existingVoucherId) {
+        const v = db.getVoucherById(existingVoucherId);
+        if (v) {
+          currentVoucher = v;
+          selectedIds = new Set(v.entries.map(e => e.id));
+          selectedRoles = [...v.roles];
+          uploadedFiles = v.attachments ? [...v.attachments] : [];
+          initialType = v.type;
+        }
+      } else {
+        currentVoucher = null;
+        selectedIds.clear();
+        if (initialEntryId) {
+          selectedIds.add(initialEntryId);
+          const entries = db.getLedger();
+          const entry = entries.find(e => e.id === initialEntryId);
+          if (entry) initialType = entry.type;
+        }
+        selectedRoles = ['담당', '팀장', '산학협력단장'];
+        uploadedFiles = []; // 파일 목록 초기화
+      }
+
       const projects = db.getProjects();
       const currentYear = helpers.getFiscalYear(new Date().toISOString().split('T')[0]);
       const allLedger = db.getLedger();
@@ -239,7 +336,7 @@ const VoucherModule = (() => {
               `).join('')}
         </div>
 
-        <h4 class="section-title">3. 내부기안(문서) 첨부 <span style="font-size:12px; font-weight:normal; color:var(--text-muted);">(선택사항)</span></h4>
+        <h4 class="section-title">3. 내부기안(문서) 첨부 <span style="font-size:12px; font-weight:bold; color:#ef4444;">(필수사항)</span></h4>
         <div id="v-dropzone-draft" style="padding:15px; background:rgba(99,102,241,0.03); border-radius:8px; border:2px dashed #cbd5e1; margin-bottom:15px; transition: all 0.2s;"
           ondragover="event.preventDefault(); this.style.borderColor='var(--primary)'; this.style.background='rgba(99,102,241,0.08)';"
           ondragleave="this.style.borderColor='#cbd5e1'; this.style.background='rgba(99,102,241,0.03)';"
@@ -262,61 +359,75 @@ const VoucherModule = (() => {
         <h4 class="section-title">5. 추가 결의 정보 입력</h4>
         <div class="card" style="padding:20px; background:rgba(255,255,255,0.5); border-radius:8px; border:1px solid rgba(0,0,0,0.05); margin-bottom:20px;">
           <div class="form-grid">
-            <div class="form-group full">
-              <label>구분경리 <span class="badge badge-warning">선택</span></label>
+             <div class="form-group full">
+              <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">구분경리</label> <span style="font-size:12px; font-weight:600; color:#2563eb; margin-left:8px;">클릭하여 선택하세요.</span>
               <select id="v-business-type" class="form-control" onchange="VoucherModule.prepareVoucher(true)">
-                <option value="목적사업">목적사업</option>
-                <option value="수익사업">수익사업</option>
-                <option value="기타">기타</option>
+                <option value="" ${!currentVoucher?.businessType ? 'selected' : ''}>&lt;선택&gt;</option>
+                <option value="목적사업" ${currentVoucher?.businessType === '목적사업' ? 'selected' : ''}>목적사업</option>
+                <option value="수익사업" ${currentVoucher?.businessType === '수익사업' ? 'selected' : ''}>수익사업</option>
+                <option value="기타" ${currentVoucher?.businessType === '기타' ? 'selected' : ''}>기타</option>
               </select>
             </div>
             <div class="form-group full">
-              <label>제목 <span class="badge badge-info" style="font-size:10px;">자동입력</span></label>
-              <input type="text" id="v-title" class="form-control" placeholder="내역을 선택하면 자동으로 적요가 입력됩니다." value="${initialEntryId ? (db.getLedger().find(e => e.id === initialEntryId)?.description || '') : ''}" oninput="VoucherModule.prepareVoucher(true)">
+              <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">제목</label> <span style="font-size:12px; font-weight:600; color:#2563eb; margin-left:8px;">자동입력됩니다.</span>
+              <input type="text" id="v-title" class="form-control" placeholder="내역을 선택하면 자동으로 적요가 입력됩니다." value="${currentVoucher ? (currentVoucher.title || '') : (initialEntryId ? (db.getLedger().find(e => e.id === initialEntryId)?.description || '') : '')}" oninput="VoucherModule.prepareVoucher(true)">
             </div>
             <div class="form-group full">
-              <label>관련근거 <span class="badge badge-neutral">수동입력</span></label>
+              <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">관련근거</label> <span style="font-size:12px; font-weight:600; color:#2563eb; margin-left:8px;">관련근거를 첨부하면, 탑재된 AI가 자동으로 인식합니다.</span>
               <div style="display:flex; gap:10px;">
-                <input type="text" id="v-draft-doc-no" class="form-control" placeholder="내부결재기안 문서번호 (예: 산학협력단-000)" style="flex:1;" oninput="VoucherModule.prepareVoucher(true)">
-                <input type="text" id="v-draft-title" class="form-control" placeholder="기안제목" style="flex:2;" oninput="VoucherModule.prepareVoucher(true)">
+                <input type="text" id="v-draft-doc-no" class="form-control" placeholder="내부결재기안 문서번호 (예: 산학협력단-000)" style="flex:1;" oninput="VoucherModule.prepareVoucher(true)" value="${currentVoucher?.content?.match(/\[문서번호\] (.*)/)?.[1] || ''}">
+                <input type="text" id="v-draft-title" class="form-control" placeholder="기안제목" style="flex:2;" oninput="VoucherModule.prepareVoucher(true)" value="${currentVoucher?.content?.match(/\[기안제목\] (.*)/)?.[1] || ''}">
               </div>
             </div>
           </div>
 
           <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #ddd;">
-            <h5 style="margin-bottom:12px;"><i class="fa-solid fa-receipt"></i> 증빙 정보</h5>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <h5 style="margin:0;"><i class="fa-solid fa-receipt"></i> 증빙 정보</h5>
+              <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; color:#2563eb; font-weight:600;">
+                <input type="checkbox" id="v-no-evidence" ${currentVoucher?.noEvidence ? 'checked' : ''} onchange="VoucherModule.prepareVoucher(true)"> 해당없음
+              </label>
+            </div>
             <div class="form-grid">
               <div class="form-group">
-                <label>발행일자</label>
-                <input type="date" id="v-evidence-date" class="form-control" onchange="VoucherModule.prepareVoucher(true)">
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">발행일자</label>
+                <input type="date" id="v-evidence-date" class="form-control" onchange="VoucherModule.prepareVoucher(true)" value="${currentVoucher?.evidenceInfo?.date || ''}">
               </div>
               <div class="form-group">
-                <label>증빙구분</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">증빙구분</label>
                 <select id="v-evidence-type" class="form-control" onchange="VoucherModule.prepareVoucher(true)">
-                  <option value="세금계산서">세금계산서</option>
-                  <option value="계산서">계산서</option>
-                  <option value="신용카드">신용카드</option>
-                  <option value="현금영수증">현금영수증</option>
-                  <option value="기타">기타</option>
+                  <option value="" ${!currentVoucher?.evidenceInfo?.type ? 'selected' : ''}>&lt;선택&gt;</option>
+                  <option value="세금계산서" ${currentVoucher?.evidenceInfo?.type === '세금계산서' ? 'selected' : ''}>세금계산서</option>
+                  <option value="계산서" ${currentVoucher?.evidenceInfo?.type === '계산서' ? 'selected' : ''}>계산서</option>
+                  <option value="신용카드" ${currentVoucher?.evidenceInfo?.type === '신용카드' ? 'selected' : ''}>신용카드</option>
+                  <option value="현금영수증" ${currentVoucher?.evidenceInfo?.type === '현금영수증' ? 'selected' : ''}>현금영수증</option>
+                  <option value="기타" ${currentVoucher?.evidenceInfo?.type === '기타' ? 'selected' : ''}>기타</option>
                 </select>
               </div>
               <div class="form-group full">
-                <label>상호(성명)</label>
-                <input type="text" id="v-evidence-vendor" class="form-control" oninput="VoucherModule.prepareVoucher(true)">
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">상호(성명)</label>
+                <input type="text" id="v-evidence-vendor" class="form-control" oninput="VoucherModule.prepareVoucher(true)" value="${currentVoucher?.evidenceInfo?.vendor || ''}">
               </div>
             </div>
           </div>
 
           <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #ddd;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <h5 style="margin:0;"><i class="fa-solid fa-credit-card"></i> 지급 구분</h5>
+              <div style="display:flex; align-items:center; gap:15px;">
+                <h5 style="margin:0;"><i class="fa-solid fa-credit-card"></i> 지급 구분</h5>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; color:#2563eb; font-weight:600;">
+                  <input type="checkbox" id="v-no-payment" ${currentVoucher?.noPayment ? 'checked' : ''} onchange="VoucherModule.prepareVoucher(true)"> 해당없음
+                </label>
+              </div>
               <div style="display:flex; gap:8px;">
                 <button class="btn btn-sm" onclick="VoucherModule.addPaymentRow()" style="background:#6366f1; color:white; border:none; padding:5px 12px; font-size:12px; font-weight:600; border-radius:4px; box-shadow:0 2px 4px rgba(99,102,241,0.2);">+ 지급처 추가</button>
                 <button class="btn btn-sm" onclick="VoucherModule.removeLastPaymentRow()" style="background:#f87171; color:white; border:none; padding:5px 12px; font-size:12px; font-weight:600; border-radius:4px; box-shadow:0 2px 4px rgba(248,113,113,0.2);">- 지급처 삭제</button>
               </div>
             </div>
             <div id="v-payment-rows-container">
-              ${renderPaymentRowHtml(0)}
+              ${(currentVoucher?.paymentInfos && currentVoucher.paymentInfos.length > 0) 
+                 ? currentVoucher.paymentInfos.map((pi, idx) => renderPaymentRowHtml(idx, pi)).join('')
+                 : renderPaymentRowHtml(0)}
             </div>
           </div>
         </div>
@@ -394,9 +505,211 @@ const VoucherModule = (() => {
         helpers.showToast(`${file.name}: 압축 후에도 10MB 초과. 업로드 불가.`, 'error'); continue;
       }
       uploadedFiles.push({ base64: base64Data, name: file.name, type: file.type, category });
+
+      // 내부기안(draft) 파일인 경우 분석 시도
+      if (category === 'draft') {
+        if (file.type === 'application/pdf') {
+          // PDF 분석
+          analyzeDraftPdf(base64Data);
+        } else if (file.type.startsWith('image/')) {
+          // 이미지 분석 (고화질)
+          helpers.compressImage(base64Data, 0.95).then(hdBase64 => {
+            analyzeDraftWithAI(hdBase64);
+          });
+        }
+      }
     }
     renderFileList(category);
     prepareVoucher(true);
+  }
+
+  async function analyzeDraftPdf(base64Data) {
+    try {
+      helpers.showToast('PDF 기안문을 추출하고 있습니다...', 'info', 4000);
+      
+      const pdfData = atob(base64Data.split(',')[1]);
+      const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+      const pdf = await loadingTask.promise;
+      
+      // 첫 페이지 텍스트 추출
+      const page = await pdf.getPage(1);
+      const textContent = await page.getTextContent();
+      const strings = textContent.items.map(item => item.str);
+      const fullText = strings.join(' ');
+      
+      console.log('PDF Extracted Text:', fullText);
+
+      let title = '';
+      let docNo = '';
+
+      // 1. 제목 찾기 (최대한 공격적인 키워드 및 구조 추적)
+      const titleKeywords = [
+          '제목', '제 목', '제  목', '제   목', '채목', '체목', '재목', '재 목', '체 목', '채 목', 
+          '제 속', '재 속', '채 속', '제 족', '계목', '세목', '세 목', '제육', '제독', '제옥', '제복', 'subject'
+      ];
+      
+      // 키워드 기반 탐색
+      for (const kw of titleKeywords) {
+          const idx = fullText.indexOf(kw);
+          if (idx !== -1) {
+              const fragment = fullText.substring(idx + kw.length, idx + kw.length + 300);
+              const lines = fragment.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+              if (lines.length > 0) {
+                  title = lines[0].replace(/^[:\s\-_=.,]+/, '').trim();
+                  if (title) break;
+              }
+          }
+      }
+
+      // 2. 구조 기반 백업 (상단 15줄 중 가장 제목다운 줄 찾기)
+      if (!title || title.length < 5) {
+          const topLines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+          for (const line of topLines.slice(0, 15)) {
+              // 문서번호, 수신처 등 제외하고 가장 긴 줄을 제목으로 추측
+              if (!line.includes('시행') && !line.includes('수신') && !line.includes('귀하') && !line.includes('협조') && line.length > 15) {
+                  title = line.replace(/^(?:제\s*목|제목|채\s*목|체\s*목|재\s*목|속|목)\s*[:\s\-_=.,]*/, '').trim();
+                  break;
+              }
+          }
+      }
+
+      // 3. 문서번호 찾기 (간격 및 오타 대응)
+      const docNoKeywords = ['시행', '시 행', '시형', '문서번호', '시 형', '시  행'];
+      for (const kw of docNoKeywords) {
+          const idx = fullText.indexOf(kw);
+          if (idx !== -1) {
+              const fragment = fullText.substring(idx, idx + 100);
+              const m = fragment.match(/([가-힣a-zA-Z\s]*\([가-힣\s]*\)[-\s]*\d+)/) || fragment.match(/([가-힣\w-]+-\d+)/);
+              if (m) {
+                  docNo = m[1].replace(/^(?:시행|시 행|시형|문서번호|시 형|시  행)\s*/, '').trim();
+                  break;
+              }
+          }
+      }
+
+      // [DEBUG] 인식된 텍스트 일부를 토스트로 보여주기 (문찰 원인 파악용)
+      const debugText = fullText.substring(0, 40).replace(/\n/g, ' ');
+      helpers.showToast(`분석결과: ${debugText}...`, 'info', 3000);
+
+      // 만약 텍스트 추출로 실패했다면 (스캔된 이미지 PDF인 경우), 첫 페이지를 이미지로 변환하여 AI에게 전달
+      if (!title || !docNo) {
+        helpers.showToast('이미지 형태의 PDF입니다. AI 분석으로 전환합니다...', 'info');
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        const imgBase64 = canvas.toDataURL('image/jpeg', 0.95);
+        return analyzeDraftWithAI(imgBase64);
+      }
+
+      // 결과 반영
+      if (title) document.getElementById('v-draft-title').value = title;
+      if (docNo) document.getElementById('v-draft-doc-no').value = docNo;
+
+      helpers.showToast('PDF에서 정보를 성공적으로 추출했습니다.', 'success');
+      prepareVoucher(true);
+
+    } catch (err) {
+      console.error('PDF Analysis Failed:', err);
+      helpers.showToast('PDF 분석 중 오류가 발생했습니다.', 'warning');
+    }
+  }
+
+  async function analyzeDraftWithAI(base64Data) {
+    try {
+      // [최적화] 제목(상단 30%)과 문서번호(하단 30%) 영역만 추출하여 인식 속도 향상
+      const optimizedBase64 = await cropImageSections(base64Data, 0.3, 0.3);
+      
+      // Tesseract.js를 이용한 클라이언트 사이드 OCR
+      const result = await Tesseract.recognize(optimizedBase64, 'kor+eng', {
+        logger: m => console.log(m)
+      });
+      
+      const fullText = result.data.text;
+      console.log('OCR Extracted Text:', fullText);
+
+      let title = '';
+      let docNo = '';
+
+      // 1. 제목 찾기 (최대한 공격적인 키워드 및 구조 추적)
+      const titleKeywords = [
+          '제목', '제 목', '제  목', '제   목', '채목', '체목', '재목', '재 목', '체 목', '채 목', 
+          '제 속', '재 속', '채 속', '제 족', '계목', '세목', '세 목', '제육', '제독', '제옥', '제복', 'subject'
+      ];
+      
+      for (const kw of titleKeywords) {
+          const idx = fullText.indexOf(kw);
+          if (idx !== -1) {
+              const fragment = fullText.substring(idx + kw.length, idx + kw.length + 300);
+              const lines = fragment.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+              if (lines.length > 0) {
+                  title = lines[0].replace(/^[:\s\-_=.,]+/, '').trim();
+                  if (title) break;
+              }
+          }
+      }
+
+      // 2. 구조 기반 백업 (상단 15줄 중 가장 제목다운 줄 찾기)
+      if (!title || title.length < 5) {
+          const topLines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+          for (const line of topLines.slice(0, 15)) {
+              if (!line.includes('시행') && !line.includes('수신') && !line.includes('귀하') && !line.includes('협조') && line.length > 15) {
+                  title = line.replace(/^(?:제\s*목|제목|채\s*목|체\s*목|재\s*목|속|목)\s*[:\s\-_=.,]*/, '').trim();
+                  break;
+              }
+          }
+      }
+
+      // 3. 문서번호 찾기 (간격 및 오타 대응)
+      const docNoKeywords = ['시행', '시 행', '시형', '문서번호', '시 형', '시  행'];
+      for (const kw of docNoKeywords) {
+          const idx = fullText.indexOf(kw);
+          if (idx !== -1) {
+              const fragment = fullText.substring(idx, idx + 100);
+              const m = fragment.match(/([가-힣a-zA-Z\s]*\([가-힣\s]*\)[-\s]*\d+)/) || fragment.match(/([가-힣\w-]+-\d+)/);
+              if (m) {
+                  docNo = m[1].replace(/^(?:시행|시 행|시형|문서번호|시 형|시  행)\s*/, '').trim();
+                  break;
+              }
+          }
+      }
+
+      // [DEBUG] 인식된 텍스트 일부를 토스트로 보여주기 (문찰 원인 파악용)
+      const debugText = fullText.substring(0, 40).replace(/\n/g, ' ');
+      helpers.showToast(`분석결과: ${debugText}...`, 'info', 3000);
+
+      let filledCount = 0;
+      if (title) {
+        // [오타 교정] EH 00, EH 0 등은 '보고 건'의 오타일 확률이 매우 높음
+        const cleanTitle = title.replace(/\s*[A-Z]{1,2}\s*[0O]{1,2}\s*$/, ' 보고 건')
+                                .replace(/\s*보고\s*EH\s*/, ' 보고 ')
+                                .replace(/\s*EH$/, ' 건')
+                                .replace(/\s*보고\s*건\s*보고\s*건$/, ' 보고 건') // 중복 발생 방지
+                                .trim();
+        document.getElementById('v-draft-title').value = cleanTitle;
+        filledCount++;
+      }
+      if (docNo) {
+        // [오타 보정] '단'이 '난'으로 읽히는 경우 보정 및 머리말 제거
+        const cleanDocNo = docNo.replace(/난(?=\))/g, '단')
+                                .replace(/^(?:시행|시 행|시형|문서번호|시 형|시  행)\s*/, '')
+                                .trim();
+        document.getElementById('v-draft-doc-no').value = cleanDocNo;
+        filledCount++;
+      }
+
+      if (filledCount > 0) {
+        helpers.showToast(`이미지에서 ${filledCount}개 정보를 인식했습니다.`, 'success');
+        prepareVoucher(true);
+      } else {
+        helpers.showToast('텍스트를 찾지 못했습니다. 화질이 좋은 사진으로 다시 시도해 주세요.', 'info');
+      }
+    } catch (err) {
+      console.error('OCR Failed:', err);
+      helpers.showToast('문자 인식에 실패했습니다. 수동으로 입력해 주세요.', 'warning');
+    }
   }
 
   function handleSearch(q) {
@@ -554,6 +867,12 @@ const VoucherModule = (() => {
         return; 
     }
     
+    // 증빙 서류 필수 체크 (내부기안 파일이 있는지 확인)
+    if (uploadedFiles.length === 0) {
+        if (!isAuto) helpers.showToast('증빙 서류(내부기안 등)를 필수로 첨부해 주세요.', 'error');
+        return;
+    }
+    
 
 const allEntries = db.getLedger();
     const selected = [...selectedIds].map(id => allEntries.find(e => e.id === id)).filter(Boolean);
@@ -599,7 +918,8 @@ const allEntries = db.getLedger();
 
     // 임시 ID (저장 시 확정)
     currentVoucher = {
-      id: db.getNextVoucherId(),
+      ...currentVoucher, // 기존 ID 등 유지
+      id: currentVoucher?.id || db.getNextVoucherId(),
       type: type,
       projectName: project?.name || '-',
       projectBank: project?.bankName || '-',
@@ -607,9 +927,9 @@ const allEntries = db.getLedger();
       totalAmount,
       entries: selected,
       roles: [...selectedRoles],
-      approvals: { '담당': true },
-      approvalSignatures: approverSig ? { '담당': approverSig } : {},
-      approvalNames: approverName ? { '담당': approverName } : {},
+      approvals: currentVoucher?.approvals || { '담당': true },
+      approvalSignatures: currentVoucher?.approvalSignatures || (approverSig ? { '담당': approverSig } : {}),
+      approvalNames: currentVoucher?.approvalNames || (approverName ? { '담당': approverName } : {}),
       attachments: uploadedFiles.length > 0 ? [...uploadedFiles] : [],
       // 추가 필드 저장
       businessType,
@@ -620,22 +940,54 @@ const allEntries = db.getLedger();
       // 하위 호환성: 단일 attachment 필드 유지
       attachment: uploadedFiles.length > 0 ? uploadedFiles[0].base64 : null,
       attachmentName: uploadedFiles.length > 0 ? uploadedFiles[0].name : '',
-      createdAt: new Date().toISOString(),
-      _saved: false
+      noEvidence: document.getElementById('v-no-evidence')?.checked || false,
+      noPayment: document.getElementById('v-no-payment')?.checked || false,
+      createdAt: currentVoucher?.createdAt || new Date().toISOString(),
+      authorId: currentVoucher?.authorId || currentUser?.username || currentUser?.id || '-',
+      authorName: currentVoucher?.authorName || currentUser?.name || '-',
+      _saved: !!currentVoucher?._saved
     };
     renderVoucherPreview(currentVoucher);
   }
 
   function renderVoucherPreview(v) {
+    const userSession = window.Auth?.getSession();
+    const isAdmin = userSession?.role === 'admin';
+    const userRank = userSession?.rank || '';
+    const authorInfo = getAuthorInfo(v);
+    const isAuthor = userSession && (userSession.username === authorInfo.id || userSession.userId === authorInfo.id);
+    const canBypass = isAdmin || isAuthor;
+
     const headerHtml = `
-      <div class="voucher-preview-actions" style="margin-bottom:16px; display:flex; gap:10px;">
-        <button class="btn btn-primary" style="background:#ef4444; border:none; padding:10px 20px;" onclick="VoucherModule.printVoucher()">🖨️ 인쇄하기</button>
-        ${!v._saved ? `<button class="btn btn-primary" style="padding:10px 20px;" onclick="VoucherModule.saveVoucherToDb()">💾 결의서 상신</button>` : `<span class="badge badge-success" style="padding:10px 15px;">✅ 저장된 결의서</span>`}
+      <div class="voucher-preview-actions" style="margin-bottom:16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <button class="btn" style="background:#ef4444; color:white; border:none; padding:10px 25px; border-radius:30px; font-weight:600; box-shadow:0 4px 10px rgba(239,68,68,0.2); display:inline-flex; align-items:center; gap:8px;" onclick="VoucherModule.printVoucher()">
+          <i class="fa-solid fa-print"></i> 인쇄하기
+        </button>
+        
+        ${!v._saved 
+          ? `<button class="btn btn-primary" style="padding:10px 25px; border-radius:30px; box-shadow:0 4px 10px rgba(37,99,235,0.2); font-weight:600; display:inline-flex; align-items:center; gap:8px;" onclick="VoucherModule.saveVoucherToDb()">
+               <i class="fa-solid fa-save"></i> 결의서 상신
+             </button>` 
+          : `<div style="display:inline-flex; align-items:center; gap:12px;">
+               <div style="background:#f0fdf4; color:#16a34a; padding:10px 25px; border-radius:30px; border:1px solid #bbf7d0; display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                 <i class="fa-solid fa-circle-check"></i> 저장된 결의서
+               </div>
+               <button class="btn" style="background:#6366f1; color:white; border:none; padding:10px 25px; border-radius:30px; font-weight:700; box-shadow:0 4px 10px rgba(99,102,241,0.3); display:inline-flex; align-items:center; gap:8px;" onclick="VoucherModule.saveAndExit()">
+                 <i class="fa-solid fa-paper-plane"></i> 재상신하기
+               </button>
+               ${canBypass ? `
+               <button class="btn" style="background:#f59e0b; color:white; border:none; padding:10px 25px; border-radius:30px; font-weight:700; box-shadow:0 4px 10px rgba(245,158,11,0.3); display:inline-flex; align-items:center; gap:8px;" onclick="VoucherModule.executeManualBypass('${v.id}'); VoucherModule.render();">
+                 <i class="fa-solid fa-file-signature"></i> 수기결재 통과
+               </button>` : ''}
+             </div>`
+        }
       </div>
     `;
     const docHtml = `
-      <div class="card" style="padding:40px; background:#fff; color:#000; border:1px solid #ddd; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-        ${getVoucherDocHtml(v)}
+      <div id="voucher-preview-scale-wrapper" style="overflow: hidden; background: #f4f6f8; padding: 20px; border-radius: 8px;">
+        <div class="card" style="padding:40px; background:#fff; color:#000; border:1px solid #ddd; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 850px; min-width: 850px; margin: 0 auto; transform-origin: top center;">
+          ${getVoucherDocHtml(v)}
+        </div>
       </div>
     `;
 
@@ -643,6 +995,9 @@ const allEntries = db.getLedger();
     const container = document.getElementById('voucher-preview-card');
     if (container) {
       container.innerHTML = headerHtml + docHtml;
+
+      // 축소 로직 적용
+      setTimeout(() => adjustVoucherScale(), 50);
 
       // 다중 PDF 첨부파일 렌더링
       const files = (v.attachments && v.attachments.length > 0)
@@ -658,6 +1013,34 @@ const allEntries = db.getLedger();
     return headerHtml + docHtml;
   }
 
+  // 화면 크기에 맞춰 결의서 미리보기 축소
+  function adjustVoucherScale() {
+    const wrapper = document.getElementById('voucher-preview-scale-wrapper');
+    if (!wrapper) return;
+    const card = wrapper.querySelector('.card');
+    if (!card) return;
+
+    const availableWidth = wrapper.clientWidth - 40; // 패딩 제외
+    const baseWidth = 850;
+
+    if (availableWidth < baseWidth) {
+      const scale = availableWidth / baseWidth;
+      card.style.transform = `scale(${scale})`;
+      // 카드가 축소되면서 생기는 하단 공백 제거 및 높이 보정
+      wrapper.style.height = `${card.offsetHeight * scale + 40}px`;
+    } else {
+      card.style.transform = 'none';
+      wrapper.style.height = 'auto';
+    }
+  }
+
+  // 윈도우 리사이즈 대응
+  window.addEventListener('resize', () => {
+    if (document.getElementById('voucher-preview-scale-wrapper')) {
+      adjustVoucherScale();
+    }
+  });
+
   function saveVoucherToDb() {
     if (!currentVoucher) return;
     if (!currentVoucher._saved) {
@@ -668,6 +1051,15 @@ const allEntries = db.getLedger();
     helpers.showToast('결의서가 저장되었습니다.', 'success');
     if (currentVoucher.attachment && window.App && App.refreshStorageUsage) App.refreshStorageUsage();
     renderVoucherPreview(currentVoucher);
+  }
+
+  function saveAndExit() {
+    if (currentVoucher) {
+      db.saveVoucher(currentVoucher);
+      currentVoucher._saved = true;
+    }
+    helpers.showToast('결의서가 성공적으로 저장 및 재상신 되었습니다.', 'success');
+    render(); // 목록 화면으로 복귀
   }
 
   function viewVoucher(id) {
@@ -694,6 +1086,19 @@ const allEntries = db.getLedger();
   }
 
   function deleteVoucher(id) {
+    const v = db.getVoucherById(id);
+    if (!v) return;
+
+    const author = getAuthorInfo(v);
+    const userSession = window.Auth?.getSession();
+    const isAdmin = userSession?.role === 'admin';
+    const isAuthor = userSession && (userSession.username === author.id || userSession.userId === author.id);
+
+    if (!isAdmin && !isAuthor) {
+      helpers.showToast('본인이 작성한 결의서만 삭제할 수 있습니다.', 'error');
+      return;
+    }
+
     if (!confirm('이 지출결의서를 삭제하시겠습니까?')) return;
     db.deleteVoucher(id);
     helpers.showToast('삭제되었습니다.');
@@ -706,11 +1111,10 @@ const allEntries = db.getLedger();
     const isIncome = v.type === 'income';
     const title = isIncome ? '수 입 결 의 서' : '지 출 결 의 서';
 
-    // 작성자 정보 (회색 영역) - 사번 / 이름 형식으로 개선
-    const session = window.Auth?.getSession();
-    const currentUser = session ? window.Auth?.getUsers().find(u => u.id === session.userId) : null;
-    const authorId = currentUser?.username || currentUser?.id || '-'; // 사번(username) 사용
-    const authorName = currentUser?.name || '-';
+    // 작성자 정보 (회색 영역) - getAuthorInfo를 통해 기존 데이터 소급 적용 포함 추출
+    const author = getAuthorInfo(v);
+    const authorId = author.id;
+    const authorName = author.name;
 
     return `
       <div class="voucher-doc-wrapper">
@@ -725,7 +1129,7 @@ const allEntries = db.getLedger();
         <!-- 문서번호 -->
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
           <span style="background-color: #d1d5db; color: #000; font-weight: bold; font-size: 14px; padding: 6px 20px; text-align: center;">문서번호</span>
-          <span style="font-weight: bold; font-size: 15px; margin-left: 15px;">산단-${v.type==='income'?'수입':'지출'}-${date.getFullYear()}-${String(v.id).padStart(4, '0')}</span>
+          <span style="font-weight: bold; font-size: 15px; margin-left: 15px;">산단-${v.type==='income'?'수입':'지출'}-${date.getFullYear()}-${String(v.id).split('-').pop().padStart(4, '0')}</span>
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -858,16 +1262,16 @@ const allEntries = db.getLedger();
           </thead>
           <tbody>
             <tr>
-              <td class="text-center">${v.evidenceInfo?.date || '-'}</td>
-              <td class="text-center">${v.evidenceInfo?.type || '-'}</td>
-              <td class="text-center">${v.evidenceInfo?.vendor || '-'}</td>
-              <td class="text-right">${helpers.formatCurrencyRaw(v.totalAmount)}</td>
+              <td class="text-center">${v.noEvidence ? '-' : (v.evidenceInfo?.date || '-')}</td>
+              <td class="text-center">${v.noEvidence ? '-' : (v.evidenceInfo?.type || '-')}</td>
+              <td class="text-center">${v.noEvidence ? '-' : (v.evidenceInfo?.vendor || '-')}</td>
+              <td class="text-right">${v.noEvidence ? '-' : helpers.formatCurrencyRaw(v.totalAmount)}</td>
               <td class="text-right">-</td>
               <td class="text-right">-</td>
             </tr>
             <tr class="total-row" style="background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
               <td class="text-center" colspan="3" style="font-weight: 700; background-color: #f2f2f2 !important;">합계</td>
-              <td class="text-right" style="font-weight: 700; background-color: #f2f2f2 !important;">${helpers.formatCurrencyRaw(v.totalAmount)}</td>
+              <td class="text-right" style="font-weight: 700; background-color: #f2f2f2 !important;">${v.noEvidence ? '-' : helpers.formatCurrencyRaw(v.totalAmount)}</td>
               <td class="text-right" style="background-color: #f2f2f2 !important;">-</td>
               <td class="text-right" style="background-color: #f2f2f2 !important;">-</td>
             </tr>
@@ -888,7 +1292,16 @@ const allEntries = db.getLedger();
             </tr>
           </thead>
           <tbody>
-            ${(v.paymentInfos && v.paymentInfos.length > 0) 
+            ${v.noPayment ? `
+                <tr>
+                  <td style="text-align:center; background-color: #fff9c4 !important;">-</td>
+                  <td style="text-align:center;">-</td>
+                  <td style="text-align:center;">-</td>
+                  <td style="text-align:right;">-</td>
+                  <td style="text-align:center;">-</td>
+                  <td style="text-align:center;">-</td>
+                </tr>
+            ` : ((v.paymentInfos && v.paymentInfos.length > 0) 
               ? v.paymentInfos.map(p => `
                 <tr>
                   <td style="text-align:center; background-color: #fff9c4 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">${p.recipientType || '-'}</td>
@@ -908,11 +1321,11 @@ const allEntries = db.getLedger();
                   <td style="text-align:center;">${v.paymentInfo?.bank || '-'}</td>
                   <td style="text-align:center;">${v.paymentInfo?.account || '-'}</td>
                 </tr>
-              `
+              `)
             }
             <tr class="total-row" style="background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
               <td colspan="3" style="text-align:center; font-weight: 700; background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">지급 합계</td>
-              <td style="text-align:right; font-weight: 700; background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">${helpers.formatCurrencyRaw(v.totalAmount)}</td>
+              <td style="text-align:right; font-weight: 700; background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">${v.noPayment ? '-' : helpers.formatCurrencyRaw(v.totalAmount)}</td>
               <td colspan="2" style="background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"></td>
             </tr>
           </tbody>
@@ -1128,11 +1541,26 @@ const allEntries = db.getLedger();
     // 모든 결재라인 승인 처리
     v.approvals = v.approvals || {};
     v.approvalSignatures = v.approvalSignatures || {};
+    v.approvalNames = v.approvalNames || {};
+
+    // 작성자 정보를 찾아 서명 복구 시도
+    const authorInfo = getAuthorInfo(v);
+    const authorUser = (window.Auth?.getUsers() || []).find(u => u.username === authorInfo.id || u.id === authorInfo.id);
+
     (v.roles || []).forEach(role => {
       v.approvals[role] = true;
-      // 이미 서명이 있는 직위(주로 담당)는 유지하고, 나머지만 '수기결재' 표시
-      if (!v.approvalSignatures[role]) {
-        v.approvalSignatures[role] = '수기결재';
+      
+      if (role === '담당') {
+        // 담당(작성자)은 수기결재 시에도 가능하면 실제 서명을 주입
+        if (!v.approvalSignatures[role] || v.approvalSignatures[role] === '수기결재') {
+          v.approvalSignatures[role] = authorUser?.signature || '수기결재';
+          v.approvalNames[role] = authorUser?.name || authorInfo.name;
+        }
+      } else {
+        // 이미 서명이 있는 직위는 유지하고, 나머지만 '수기결재' 표시
+        if (!v.approvalSignatures[role]) {
+          v.approvalSignatures[role] = '수기결재';
+        }
       }
     });
     
@@ -1240,44 +1668,63 @@ const allEntries = db.getLedger();
     }
   }
 
-  function renderPaymentRowHtml(idx) {
+  function editVoucher(id) {
+    const v = db.getVoucherById(id);
+    if (!v) return;
+
+    const author = getAuthorInfo(v);
+    const userSession = window.Auth?.getSession();
+    const isAdmin = userSession?.role === 'admin';
+    const isAuthor = userSession && (userSession.username === author.id || userSession.userId === author.id);
+
+    if (!isAdmin && !isAuthor) {
+      helpers.showToast('본인이 작성한 결의서만 수정할 수 있습니다.', 'error');
+      return;
+    }
+
+    openNewVoucher(null, null, id);
+    setTimeout(() => prepareVoucher(true), 100);
+  }
+
+  function renderPaymentRowHtml(idx, pi = null) {
     return `
       <div class="v-payment-row" data-idx="${idx}" style="position:relative; padding:15px; border:1px solid #eee; border-radius:8px; margin-bottom:10px; background:#fff;">
         ${idx > 0 ? `<button onclick="VoucherModule.removePaymentRow(this)" style="position:absolute; top:5px; right:5px; border:none; background:none; color:#ef4444; cursor:pointer;" title="삭제">×</button>` : ''}
         <div class="form-grid">
           <div class="form-group">
-            <label>구분</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">구분</label>
             <select id="v-payment-recipient-type-${idx}" class="form-control" onchange="VoucherModule.prepareVoucher(true)">
-              <option value="거래처(개인)">거래처(개인)</option>
-              <option value="거래처(사업자)">거래처(사업자)</option>
+              <option value="" ${!pi?.recipientType ? 'selected' : ''}>&lt;선택&gt;</option>
+              <option value="거래처(개인)" ${pi?.recipientType === '거래처(개인)' ? 'selected' : ''}>거래처(개인)</option>
+              <option value="거래처(사업자)" ${pi?.recipientType === '거래처(사업자)' ? 'selected' : ''}>거래처(사업자)</option>
             </select>
           </div>
           <div class="form-group">
-            <label>지급처</label>
-            <input type="text" id="v-payment-recipient-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)">
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">지급처</label>
+            <input type="text" id="v-payment-recipient-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)" value="${pi?.recipient || ''}">
           </div>
           <div class="form-group">
-            <label>예금주</label>
-            <input type="text" id="v-payment-holder-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)">
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">예금주</label>
+            <input type="text" id="v-payment-holder-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)" value="${pi?.holder || ''}">
           </div>
           <div class="form-group">
-            <label>금액</label>
-            <input type="text" id="v-payment-amount-${idx}" class="form-control" placeholder="0" oninput="helpers.handleAmountInput(this); VoucherModule.prepareVoucher(true)">
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">금액</label>
+            <input type="text" id="v-payment-amount-${idx}" class="form-control" placeholder="0" oninput="helpers.handleAmountInput(this); VoucherModule.prepareVoucher(true)" value="${pi ? helpers.formatCurrencyRaw(pi.amount) : ''}">
           </div>
           <div class="form-group">
-            <label>은행명</label>
-            <input type="text" id="v-payment-bank-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)">
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">은행명</label>
+            <input type="text" id="v-payment-bank-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)" value="${pi?.bank || ''}">
           </div>
           <div class="form-group">
-            <label>계좌번호</label>
-            <input type="text" id="v-payment-account-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)">
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">계좌번호</label>
+            <input type="text" id="v-payment-account-${idx}" class="form-control" oninput="VoucherModule.prepareVoucher(true)" value="${pi?.account || ''}">
           </div>
           <div class="form-group" style="display:none">
-            <label>지급방법</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">지급방법</label>
             <select id="v-payment-method-${idx}" class="form-control">
-              <option value="계좌이체" selected>계좌이체</option>
-              <option value="현금">현금</option>
-              <option value="기타">기타</option>
+              <option value="계좌이체" ${(!pi || pi.method === '계좌이체') ? 'selected' : ''}>계좌이체</option>
+              <option value="현금" ${pi?.method === '현금' ? 'selected' : ''}>현금</option>
+              <option value="기타" ${pi?.method === '기타' ? 'selected' : ''}>기타</option>
             </select>
           </div>
         </div>
@@ -1286,9 +1733,9 @@ const allEntries = db.getLedger();
   }
 
     return { 
-      render, openNewVoucher, toggleRole, handleFileDrop, handleFileChange, removeFile, 
-      toggleEntry, changeType, filterEntries, prepareVoucher, saveVoucherToDb, 
-      viewVoucher, deleteVoucher, printVoucher, approveVoucher, executeManualBypass,
+      render, openNewVoucher, editVoucher, toggleRole, handleFileDrop, handleFileChange, removeFile, 
+      toggleEntry, changeType, filterEntries, prepareVoucher, saveVoucherToDb, saveAndExit,
+      viewVoucher, deleteVoucher, printVoucher, approveVoucher, executeApproval, executeManualBypass,
       cancelApproval, executeCancelApproval, addPaymentRow, removePaymentRow, removeLastPaymentRow,
       handleSearch
     };

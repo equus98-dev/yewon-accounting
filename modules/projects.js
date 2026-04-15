@@ -285,8 +285,29 @@ const ProjectsModule = (() => {
     if (!budget || budget <= 0) { helpers.showToast('올바른 예산을 입력해 주세요.', 'error'); return; }
 
     const cats = [...document.querySelectorAll('[name="proj-cats"]:checked')].map(cb => cb.value);
+    const projectId = document.getElementById('proj-id').value || null;
+
+    // 과제명 변경 감지: 수정 모드이고 기존 과제명과 다를 경우 결의서 일괄 업데이트
+    if (projectId) {
+      const existing = db.getProjectById(projectId);
+      if (existing && existing.name !== name) {
+        const vouchers = db.getVouchers();
+        let updatedCount = 0;
+        vouchers.forEach(v => {
+          if (v.projectId === projectId || v.projectName === existing.name) {
+            v.projectName = name;
+            db.saveVoucher(v);
+            updatedCount++;
+          }
+        });
+        if (updatedCount > 0) {
+          console.log(`[ProjectsModule] 결의서 ${updatedCount}건의 과제명을 "${existing.name}" → "${name}"으로 업데이트했습니다.`);
+        }
+      }
+    }
+
     const project = {
-      id: document.getElementById('proj-id').value || null,
+      id: projectId,
       name,
       manager,
       staff: document.getElementById('proj-staff').value.trim(),

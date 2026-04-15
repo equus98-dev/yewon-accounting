@@ -1,4 +1,5 @@
 // modules/budget.js - 산학협력단 전체예산 관리 (운영계산서 기준)
+// [v19] 2023.6 산학협력단 회계처리규칙 해설서 표준 계정 체계 완벽 반영
 
 const BudgetModule = (() => {
   const { db } = window;
@@ -8,126 +9,134 @@ const BudgetModule = (() => {
   let _selectedYear = 2026;
 
   // ═══════════════════════════════════════════════
-  // 관-항-목 구조 정의 (운영계산서 기준)
+  // 관-항-목 구조 정의 (운영계산서 기준 표준 체계)
   // ═══════════════════════════════════════════════
   const BUDGET_STRUCTURE = {
     income: {
       label: '운영수익총계',
       sections: [
         {
-          code: 'OI-1', name: 'Ⅰ. 산학협력수익',
+          code: 'OI-1', name: 'Ⅰ.산학협력수익',
           categories: [
             {
-              code: 'OI-1-1', name: '1. 연구수익',
+              code: 'OI-1-1', name: '1.연구수익',
               items: [
-                { code: 'OI-1-1-01', name: '1) 정부연구수익' },
-                { code: 'OI-1-1-02', name: '2) 산업체연구수익' }
+                { code: 'OI-1-1-01', name: '1)정부연구수익' },
+                { code: 'OI-1-1-02', name: '2)산업체연구수익' }
               ]
             },
             {
-              code: 'OI-1-2', name: '2. 교육운영수익',
+              code: 'OI-1-2', name: '2.교육운영수익',
               items: [
-                { code: 'OI-1-2-01', name: '1) 교육운영수익' }
+                { code: 'OI-1-2-01', name: '1)교육운영수익' }
               ]
             },
             {
-              code: 'OI-1-3', name: '3. 기술이전수익',
+              code: 'OI-1-3', name: '3.기술이전수익',
               items: [
-                { code: 'OI-1-3-01', name: '1) 지식재산권이전수익' },
-                { code: 'OI-1-3-02', name: '2) 노하우이전수익' }
+                { code: 'OI-1-3-01', name: '1)지식재산권이전수익' },
+                { code: 'OI-1-3-02', name: '2)노하우이전수익' }
               ]
             },
             {
-              code: 'OI-1-4', name: '4. 설비자산사용료수익',
+              code: 'OI-1-4', name: '4.설비자산사용료수익',
               items: [
-                { code: 'OI-1-4-01', name: '1) 설비자산사용료수익' },
-                { code: 'OI-1-4-02', name: '2) 임대료수익' }
+                { code: 'OI-1-4-01', name: '1)설비자산사용료수익' },
+                { code: 'OI-1-4-02', name: '2)임대료수익' }
               ]
             },
             {
-              code: 'OI-1-5', name: '5. 기타산학협력수익',
+              code: 'OI-1-5', name: '5.기타산학협력수익',
               items: [
-                { code: 'OI-1-5-01', name: '1) 기타산학협력수익' },
-                { code: 'OI-1-5-02', name: '2) 학교기업수익' }
+                { code: 'OI-1-5-01', name: '1)기타산학협력수익' },
+                { code: 'OI-1-5-02', name: '2)학교기업 수익' }
               ]
             }
           ]
         },
         {
-          code: 'OI-2', name: 'Ⅱ. 지원금수익',
+          code: 'OI-2', name: 'Ⅱ.지원금수익',
           categories: [
             {
-              code: 'OI-2-1', name: '1. 연구수익',
+              code: 'OI-2-1', name: '1.연구수익',
               items: [
-                { code: 'OI-2-1-01', name: '1) 정부연구수익' },
-                { code: 'OI-2-1-02', name: '2) 산업체연구수익' }
+                { code: 'OI-2-1-01', name: '1)정부연구수익' },
+                { code: 'OI-2-1-02', name: '2)산업체연구수익' }
               ]
             },
             {
-              code: 'OI-2-2', name: '2. 교육운영수익',
+              code: 'OI-2-2', name: '2.교육운영수익',
               items: [
-                { code: 'OI-2-2-01', name: '1) 교육운영수익' }
+                { code: 'OI-2-2-01', name: '1)교육운영수익' }
               ]
             },
             {
-              code: 'OI-2-3', name: '3. 기타지원금수익',
+              code: 'OI-2-3', name: '3.기타지원금수익',
               items: [
-                { code: 'OI-2-3-01', name: '1) 기타지원금수익' }
+                { code: 'OI-2-3-01', name: '1)기타지원금수익' }
               ]
             }
           ]
         },
         {
-          code: 'OI-3', name: 'Ⅲ. 간접비수익',
+          code: 'OI-3', name: 'Ⅲ.간접비수익',
           categories: [
             {
-              code: 'OI-3-1', name: '1. 산학협력수익',
+              code: 'OI-3-1', name: '1.산학협력수익',
               items: [
-                { code: 'OI-3-1-01', name: '1) 산학협력연구수익' },
-                { code: 'OI-3-1-02', name: '2) 산학협력교육운영수익' },
-                { code: 'OI-3-1-03', name: '3) 기타산학협력수익' }
+                { code: 'OI-3-1-01', name: '1)산학협력연구수익' },
+                { code: 'OI-3-1-02', name: '2)산학협력교육운영수익' },
+                { code: 'OI-3-1-03', name: '3)기타산학협력수익' }
               ]
             },
             {
-              code: 'OI-3-2', name: '2. 지원금수익',
+              code: 'OI-3-2', name: '2.지원금수익',
               items: [
-                { code: 'OI-3-2-01', name: '1) 지원금연구수익' },
-                { code: 'OI-3-2-02', name: '2) 지원금교육운영수익' },
-                { code: 'OI-3-2-03', name: '3) 기타지원금수익' }
+                { code: 'OI-3-2-01', name: '1)지원금연구수익' },
+                { code: 'OI-3-2-02', name: '2)지원금교육운영수익' },
+                { code: 'OI-3-2-03', name: '3)기타지원금수익' }
               ]
             }
           ]
         },
         {
-          code: 'OI-4', name: 'Ⅳ. 전입및기부금수익',
+          code: 'OI-4', name: 'Ⅳ.전입및기부금수익',
           categories: [
             {
-              code: 'OI-4-1', name: '1. 전입금수익',
+              code: 'OI-4-1', name: '1.전입금수익',
               items: [
-                { code: 'OI-4-1-01', name: '1) 학교법인전입금' },
-                { code: 'OI-4-1-02', name: '2) 학교회계전입금' },
-                { code: 'OI-4-1-03', name: '3) 기타전입금' }
+                { code: 'OI-4-1-01', name: '1)학교법인전입금' },
+                { code: 'OI-4-1-02', name: '2)학교회계전입금' },
+                { code: 'OI-4-1-03', name: '3)학교기업전입금' },
+                { code: 'OI-4-1-04', name: '4)기타전입금' }
               ]
             },
             {
-              code: 'OI-4-2', name: '2. 기부금수익',
+              code: 'OI-4-2', name: '2.기부금수익',
               items: [
-                { code: 'OI-4-2-01', name: '1) 일반기부금' },
-                { code: 'OI-4-2-02', name: '2) 지정기부금' },
-                { code: 'OI-4-2-03', name: '3) 현물기부금' }
+                { code: 'OI-4-2-01', name: '1)일반기부금' },
+                { code: 'OI-4-2-02', name: '2)지정기부금' }
               ]
             }
           ]
         },
         {
-          code: 'OI-5', name: 'Ⅴ. 운영외수익',
+          code: 'OI-5', name: 'Ⅴ.운영외수익',
           categories: [
             {
-              code: 'OI-5-1', name: '1. 운영외수익',
+              code: 'OI-5-1', name: '1.운영외수익',
               items: [
-                { code: 'OI-5-1-01', name: '1) 이자수익' },
-                { code: 'OI-5-1-02', name: '2) 배당금수익' },
-                { code: 'OI-5-1-03', name: '3) 기타운영외수익' }
+                { code: 'OI-5-1-01', name: '1)이자수익' },
+                { code: 'OI-5-1-02', name: '2)배당금수익' },
+                { code: 'OI-5-1-03', name: '3)유가증권평가이익' },
+                { code: 'OI-5-1-04', name: '4)유가증권처분이익' },
+                { code: 'OI-5-1-05', name: '5)외환차익' },
+                { code: 'OI-5-1-06', name: '6)외화환산이익' },
+                { code: 'OI-5-1-07', name: '7)유형자산처분이익' },
+                { code: 'OI-5-1-08', name: '8)대손충당금환입' },
+                { code: 'OI-5-1-09', name: '9)전기오류수정이익' },
+                { code: 'OI-5-1-10', name: '10)고유목적사업준비금환입액' },
+                { code: 'OI-5-1-11', name: '11) 기타운영외수익' }
               ]
             }
           ]
@@ -138,139 +147,166 @@ const BudgetModule = (() => {
       label: '운영비용총계',
       sections: [
         {
-          code: 'OE-1', name: 'Ⅰ. 산학협력비',
+          code: 'OE-1', name: 'Ⅰ.산학협력비',
           categories: [
             {
-              code: 'OE-1-1', name: '1. 산학협력연구비',
+              code: 'OE-1-1', name: '1.산학협력연구비',
               items: [
-                { code: 'OE-1-1-01', name: '1) 인건비' },
-                { code: 'OE-1-1-02', name: '2) 학생인건비' },
-                { code: 'OE-1-1-03', name: '3) 연구시설·장비비' },
-                { code: 'OE-1-1-04', name: '4) 연구활동비' },
-                { code: 'OE-1-1-05', name: '5) 연구재료비' },
-                { code: 'OE-1-1-06', name: '6) 위탁연구개발비' }
+                { code: 'OE-1-1-01', name: '1)인건비' },
+                { code: 'OE-1-1-02', name: '2)학생인건비' },
+                { code: 'OE-1-1-03', name: '3)연구시설·장비비' },
+                { code: 'OE-1-1-04', name: '4)연구활동비' },
+                { code: 'OE-1-1-05', name: '5)연구재료비' },
+                { code: 'OE-1-1-06', name: '6)연구수당' },
+                { code: 'OE-1-1-07', name: '7)위탁연구개발비' }
               ]
             },
             {
-              code: 'OE-1-2', name: '2. 교육운영비',
+              code: 'OE-1-2', name: '2.교육운영비',
               items: [
-                { code: 'OE-1-2-01', name: '1) 인건비' },
-                { code: 'OE-1-2-02', name: '2) 장학금' },
-                { code: 'OE-1-2-03', name: '3) 실험실습비' },
-                { code: 'OE-1-2-04', name: '4) 기타교육운영비' }
+                { code: 'OE-1-2-01', name: '1)인건비' },
+                { code: 'OE-1-2-02', name: '2)교육과정개발비' },
+                { code: 'OE-1-2-03', name: '3)장학금' },
+                { code: 'OE-1-2-04', name: '4)실험실습비' },
+                { code: 'OE-1-2-05', name: '5)기타교육운영비' }
               ]
             },
             {
-              code: 'OE-1-3', name: '3. 지식재산권비용',
+              code: 'OE-1-3', name: '3.지식재산권비용',
               items: [
-                { code: 'OE-1-3-01', name: '1) 지식재산권심사·등록비' },
-                { code: 'OE-1-3-02', name: '2) 산학협력보상금' }
+                { code: 'OE-1-3-01', name: '1)지식재산권실시·양도비' },
+                { code: 'OE-1-3-02', name: '2)산학협력보상금' }
               ]
             },
             {
-              code: 'OE-1-4', name: '4. 기타산학협력비',
+              code: 'OE-1-4', name: '4.학교시설사용료',
               items: [
-                { code: 'OE-1-4-01', name: '1) 기타산학협력비' }
+                { code: 'OE-1-4-01', name: '1)학교시설사용료' }
+              ]
+            },
+            {
+              code: 'OE-1-5', name: '5.기타산학협력비',
+              items: [
+                { code: 'OE-1-5-01', name: '1)인건비' },
+                { code: 'OE-1-5-02', name: '2)기타산학협력비' },
+                { code: 'OE-1-5-03', name: '3)학교기업 비용' }
               ]
             }
           ]
         },
         {
-          code: 'OE-2', name: 'Ⅱ. 지원금사업비',
+          code: 'OE-2', name: 'Ⅱ.지원금사업비',
           categories: [
             {
-              code: 'OE-2-1', name: '1. 연구비',
+              code: 'OE-2-1', name: '1.연구비',
               items: [
-                { code: 'OE-2-1-01', name: '1) 인건비' },
-                { code: 'OE-2-1-02', name: '2) 학생인건비' },
-                { code: 'OE-2-1-03', name: '3) 연구시설·장비비' },
-                { code: 'OE-2-1-04', name: '4) 연구활동비' },
-                { code: 'OE-2-1-05', name: '5) 연구재료비' },
-                { code: 'OE-2-1-06', name: '6) 위탁연구개발비' }
+                { code: 'OE-2-1-01', name: '1)인건비' },
+                { code: 'OE-2-1-02', name: '2)학생인건비' },
+                { code: 'OE-2-1-03', name: '3)연구시설·장비비' },
+                { code: 'OE-2-1-04', name: '4)연구활동비' },
+                { code: 'OE-2-1-05', name: '5)연구재료비' },
+                { code: 'OE-2-1-06', name: '6)연구수당' },
+                { code: 'OE-2-1-07', name: '7)위탁연구개발비' }
               ]
             },
             {
-              code: 'OE-2-2', name: '2. 교육운영비',
+              code: 'OE-2-2', name: '2.교육운영비',
               items: [
-                { code: 'OE-2-2-01', name: '1) 인건비' },
-                { code: 'OE-2-2-02', name: '2) 장학금' },
-                { code: 'OE-2-2-03', name: '3) 실험실습비' },
-                { code: 'OE-2-2-04', name: '4) 기타교육운영비' }
+                { code: 'OE-2-2-01', name: '1)인건비' },
+                { code: 'OE-2-2-02', name: '2)교육과정개발비' },
+                { code: 'OE-2-2-03', name: '3)장학금' },
+                { code: 'OE-2-2-04', name: '4)실험실습비' },
+                { code: 'OE-2-2-05', name: '5)기타교육운영비' }
               ]
             },
             {
-              code: 'OE-2-3', name: '3. 기타지원금사업비',
+              code: 'OE-2-3', name: '3.기타지원금사업비',
               items: [
-                { code: 'OE-2-3-01', name: '1) 기타지원금사업비' }
+                { code: 'OE-2-3-01', name: '1)인건비' },
+                { code: 'OE-2-3-02', name: '2)기타지원금사업비' }
               ]
             }
           ]
         },
         {
-          code: 'OE-3', name: 'Ⅲ. 간접비사업비',
+          code: 'OE-3', name: 'Ⅲ.간접비사업비',
           categories: [
             {
-              code: 'OE-3-1', name: '1. 인력지원비',
+              code: 'OE-3-1', name: '1.인력지원비',
               items: [
-                { code: 'OE-3-1-01', name: '1) 인건비' },
-                { code: 'OE-3-1-02', name: '2) 연구개발능률성과급' }
+                { code: 'OE-3-1-01', name: '1)인건비' },
+                { code: 'OE-3-1-02', name: '2)연구개발능률성과급' },
+                { code: 'OE-3-1-03', name: '3)연구개발준비금' }
               ]
             },
             {
-              code: 'OE-3-2', name: '2. 연구지원비',
+              code: 'OE-3-2', name: '2.연구지원비',
               items: [
-                { code: 'OE-3-2-01', name: '1) 기관 공통비용' },
-                { code: 'OE-3-2-02', name: '2) 연구실안전관리비' },
-                { code: 'OE-3-2-03', name: '3) 연구활동지원금' },
-                { code: 'OE-3-2-04', name: '4) 학생산재보험료' }
+                { code: 'OE-3-2-01', name: '1)기관 공통비용' },
+                { code: 'OE-3-2-02', name: '2)사업단 또는 연구단 운영비' },
+                { code: 'OE-3-2-03', name: '3)기반시설·장비구축·운영비' },
+                { code: 'OE-3-2-04', name: '4)연구실안전관리비' },
+                { code: 'OE-3-2-05', name: '5)학생산재보험료' },
+                { code: 'OE-3-2-06', name: '6)연구보안관리비' },
+                { code: 'OE-3-2-07', name: '7)연구윤리활동비' },
+                { code: 'OE-3-2-08', name: '8)연구활동지원금' }
               ]
             },
             {
-              code: 'OE-3-3', name: '3. 성과활용지원비',
+              code: 'OE-3-3', name: '3.성과활용지원비',
               items: [
-                { code: 'OE-3-3-01', name: '1) 지식재산권출원·등록비' }
+                { code: 'OE-3-3-01', name: '1)과학문화활동비' },
+                { code: 'OE-3-3-02', name: '2)지식재산권 출원·등록비' }
               ]
             },
             {
-              code: 'OE-3-4', name: '4. 기타지원비',
+              code: 'OE-3-4', name: '4.기타지원비',
               items: [
-                { code: 'OE-3-4-01', name: '1) 기타지원비' }
+                { code: 'OE-3-4-01', name: '1)기타지원비' }
               ]
             }
           ]
         },
         {
-          code: 'OE-4', name: 'Ⅳ. 일반관리비',
+          code: 'OE-4', name: 'Ⅳ.일반관리비',
           categories: [
             {
-              code: 'OE-4-1', name: '1. 일반관리비',
+              code: 'OE-4-1', name: '1.일반관리비',
               items: [
-                { code: 'OE-4-1-01', name: '1) 인건비' },
-                { code: 'OE-4-1-02', name: '2) 일반제경비' },
-                { code: 'OE-4-1-03', name: '3) 보험료' }
+                { code: 'OE-4-1-01', name: '1)인건비' },
+                { code: 'OE-4-1-02', name: '2)감가상각비' },
+                { code: 'OE-4-1-03', name: '3)무형자산상각비' },
+                { code: 'OE-4-1-04', name: '4)대손상각비' },
+                { code: 'OE-4-1-05', name: '5)일반제경비' }
               ]
             }
           ]
         },
         {
-          code: 'OE-5', name: 'Ⅴ. 운영외비용',
+          code: 'OE-5', name: 'Ⅴ.운영외비용',
           categories: [
             {
-              code: 'OE-5-1', name: '1. 운영외비용',
+              code: 'OE-5-1', name: '1.운영외비용',
               items: [
-                { code: 'OE-5-1-01', name: '1) 이자비용' },
-                { code: 'OE-5-1-02', name: '2) 기타운영외비용' }
+                { code: 'OE-5-1-01', name: '1)유가증권처분손실' },
+                { code: 'OE-5-1-02', name: '2)유가증권평가손실' },
+                { code: 'OE-5-1-03', name: '3)외환차손' },
+                { code: 'OE-5-1-04', name: '4)외화환산손실' },
+                { code: 'OE-5-1-05', name: '5)유형자산처분손실' },
+                { code: 'OE-5-1-06', name: '6)전기오류수정손실' },
+                { code: 'OE-5-1-07', name: '7)고유목적사업준비금전입액' },
+                { code: 'OE-5-1-08', name: '8)기타운영외비용' }
               ]
             }
           ]
         },
         {
-          code: 'OE-6', name: 'Ⅵ. 학교회계전출금',
+          code: 'OE-6', name: 'Ⅵ.학교회계전출금',
           categories: [
             {
-              code: 'OE-6-1', name: '1. 학교회계전출금',
+              code: 'OE-6-1', name: '1.학교회계전출금',
               items: [
-                { code: 'OE-6-1-01', name: '1) 학교회계전출금' }
+                { code: 'OE-6-1-01', name: '1)학교회계전출금' }
               ]
             }
           ]
@@ -326,7 +362,6 @@ const BudgetModule = (() => {
     const totalIncome = incomeItems.reduce((s, b) => s + (b.amount || 0), 0);
     const totalExpense = expenseItems.reduce((s, b) => s + (b.amount || 0), 0);
     const totalReserve = reserveItems.reduce((s, b) => s + (b.amount || 0), 0);
-    // 운영차액 = 운영수익 - 운영비용
     const totalDiff = totalIncome - (totalExpense + totalReserve);
 
     document.getElementById('app-content').innerHTML = `
@@ -349,7 +384,6 @@ const BudgetModule = (() => {
         </div>
       </div>
 
-      <!-- KPI 요약 -->
       <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
         <div class="kpi-card">
           <div class="kpi-icon kpi-green">📥</div>
@@ -362,7 +396,7 @@ const BudgetModule = (() => {
         <div class="kpi-card">
           <div class="kpi-icon kpi-red">📤</div>
           <div class="kpi-info">
-            <div class="kpi-label">운영비용 예산총계 (예비비 포함)</div>
+            <div class="kpi-label">운영비용 예산총계</div>
             <div class="kpi-value">${helpers.formatCurrencyRaw(totalExpense + totalReserve)}<span class="kpi-unit">원</span></div>
             <div class="kpi-sub">비용 ${expenseItems.length}개 / 예비비 ${reserveItems.length}개</div>
           </div>
@@ -370,14 +404,13 @@ const BudgetModule = (() => {
         <div class="kpi-card">
           <div class="kpi-icon kpi-blue">💰</div>
           <div class="kpi-info">
-            <div class="kpi-label">운영차액 (수익 - 비용)</div>
+            <div class="kpi-label">운영차액</div>
             <div class="kpi-value">${helpers.formatCurrencyRaw(totalDiff)}<span class="kpi-unit">원</span></div>
-            <div class="kpi-sub">운영수익총계 - 운영비용총계</div>
+            <div class="kpi-sub">수익 - 비용</div>
           </div>
         </div>
       </div>
 
-      <!-- 운영수익 테이블 -->
       <div class="card">
         <h4 class="card-title" style="color:var(--success);">📥 운영수익</h4>
         <div class="table-wrapper">
@@ -388,7 +421,7 @@ const BudgetModule = (() => {
                 <th class="text-left" style="width:20%">항 (Category)</th>
                 <th class="text-left text-nowrap" style="width:20%">목 (Item)</th>
                 <th class="text-right" style="width:15%">예산액 (원)</th>
-                <th style="width:17%">비고 (산출근거)</th>
+                <th style="width:17%">비고</th>
                 <th class="text-center" style="width:10%">관리</th>
               </tr>
             </thead>
@@ -399,7 +432,6 @@ const BudgetModule = (() => {
         </div>
       </div>
 
-      <!-- 운영비용 테이블 -->
       <div class="card">
         <h4 class="card-title" style="color:var(--danger);">📤 운영비용</h4>
         <div class="table-wrapper">
@@ -410,7 +442,7 @@ const BudgetModule = (() => {
                 <th class="text-left" style="width:20%">항 (Category)</th>
                 <th class="text-left text-nowrap" style="width:20%">목 (Item)</th>
                 <th class="text-right" style="width:15%">예산액 (원)</th>
-                <th style="width:17%">비고 (산출근거)</th>
+                <th style="width:17%">비고</th>
                 <th class="text-center" style="width:10%">관리</th>
               </tr>
             </thead>
@@ -421,7 +453,6 @@ const BudgetModule = (() => {
         </div>
       </div>
 
-      <!-- 예비비 테이블 -->
       <div class="card" style="border-left: 4px solid #f59e0b;">
         <h4 class="card-title" style="color:#f59e0b;">🛡️ 예비비</h4>
         <div class="table-wrapper" style="margin-bottom: 20px;">
@@ -432,26 +463,18 @@ const BudgetModule = (() => {
                 <th class="text-left" style="width:20%">항 (Category)</th>
                 <th class="text-left text-nowrap" style="width:20%">목 (Item)</th>
                 <th class="text-right" style="width:15%">예산액 (원)</th>
-                <th style="width:17%">비고 (산출근거)</th>
+                <th style="width:17%">비고</th>
                 <th class="text-center" style="width:10%">관리</th>
               </tr>
             </thead>
             <tbody>
               ${renderGroupedRows(reserveItems, 'reserve')}
-              <tr class="total-row">
-                <th colspan="3" class="text-right">예비비 합계</th>
-                <th class="text-right" style="color:#f59e0b;">${helpers.formatCurrencyRaw(totalReserve)}원</th>
-                <th colspan="2"></th>
-              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- 예산 추가/수정 모달 -->
       ${renderAddModal()}
-
-      <!-- 예산 전용 모달 -->
       ${renderTransferModal()}
     `;
   }
@@ -469,15 +492,15 @@ const BudgetModule = (() => {
           if (matching.length > 0) {
             matching.forEach(b => {
               html += `<tr>
-                            <td data-label="관" class="text-left"><span class="badge ${isPrint ? '' : 'badge-accent'}">${sec.name}</span></td>
-                            <td data-label="항" class="text-left">${cat.name}</td>
-                            <td data-label="목" class="text-left text-nowrap"><strong>${itemDef.name}</strong></td>
-                            <td data-label="예산액" class="text-right ${['income'].includes(type) ? 'text-success' : 'text-danger'}">
+                            <td class="text-left"><span class="badge ${isPrint ? '' : 'badge-accent'}">${sec.name}</span></td>
+                            <td class="text-left">${cat.name}</td>
+                            <td class="text-left text-nowrap"><strong>${itemDef.name}</strong></td>
+                            <td class="text-right ${['income'].includes(type) ? 'text-success' : 'text-danger'}">
                                <strong>${['income'].includes(type) ? '+' : '-'}${helpers.formatCurrencyRaw(b.amount)}</strong>
                             </td>
-                            <td data-label="비고" class="text-sm">${b.note || '-'}</td>
+                            <td class="text-sm">${b.note || '-'}</td>
                             ${isPrint ? '' : `
-                            <td data-label="관리" class="text-center">
+                            <td class="text-center">
                               <div class="action-btns">
                                 <button class="btn-icon btn-edit" onclick="BudgetModule.openEditModal('${b.id}')" title="수정">✏️</button>
                                 <button class="btn-icon btn-delete" onclick="BudgetModule.deleteItem('${b.id}')" title="삭제">🗑️</button>
@@ -487,12 +510,12 @@ const BudgetModule = (() => {
             });
           } else if (!isPrint) {
             html += `<tr style="opacity: 0.6; background-color: rgba(0,0,0,0.02);">
-                          <td data-label="관" class="text-left"><span class="badge badge-neutral">${sec.name}</span></td>
-                          <td data-label="항" class="text-left">${cat.name}</td>
-                          <td data-label="목" class="text-left text-nowrap">${itemDef.name}</td>
-                          <td data-label="예산액" class="text-right">0</td>
-                          <td data-label="비고" class="text-sm" style="color:var(--text-muted)">-</td>
-                          <td data-label="관리" class="text-center">
+                          <td class="text-left"><span class="badge badge-neutral">${sec.name}</span></td>
+                          <td class="text-left">${cat.name}</td>
+                          <td class="text-left text-nowrap">${itemDef.name}</td>
+                          <td class="text-right">0</td>
+                          <td class="text-sm" style="color:var(--text-muted)">-</td>
+                          <td class="text-center">
                             <button class="btn btn-sm" style="padding: 2px 8px; font-size: 11px;" 
                                     onclick="BudgetModule.openAddModalPreFilled('${type}', ${secIdx}, ${catIdx}, '${itemDef.code}')">
                               ➕ 추가
@@ -504,9 +527,10 @@ const BudgetModule = (() => {
       });
     });
 
-    // 미분류 항목
     const allCodes = [];
-    struct.sections.forEach(s => s.categories.forEach(c => c.items.forEach(i => allCodes.push(i.code))));
+    for (const t in BUDGET_STRUCTURE) {
+      BUDGET_STRUCTURE[t].sections.forEach(s => s.categories.forEach(c => c.items.forEach(i => allCodes.push(i.code))));
+    }
     const unmatched = items.filter(b => !allCodes.includes(b.itemCode));
     unmatched.forEach(b => {
       html += `<tr>
@@ -587,8 +611,8 @@ const BudgetModule = (() => {
                 </div>
               </div>
               <div class="form-group full">
-                <label>비고 (산출근거)</label>
-                <input type="text" id="bgt-note" class="form-control" placeholder="예: RISE 사업, 사업비의 10% 등">
+                <label>비고</label>
+                <input type="text" id="bgt-note" class="form-control" placeholder="비고 입력">
               </div>
             </div>
           </div>
@@ -611,35 +635,29 @@ const BudgetModule = (() => {
             <button class="modal-close" onclick="helpers.closeModal('transfer-modal')">×</button>
           </div>
           <div class="modal-body">
-            <p class="hint-text">예산총칙 제3조에 따라, 같은 유형 내에서 목간 예산을 전용(이동)합니다.</p>
+            <p class="hint-text">동일 관 내에서 목간 예산을 전용합니다.</p>
             <div class="form-grid">
               <div class="form-group">
-                <label>전출 항목 (감소) <span class="required">*</span></label>
+                <label>전출 항목 <span class="required">*</span></label>
                 <select id="tf-from" class="form-control">
                   <option value="">-- 원본 선택 --</option>
-                  ${items.map(b => {
-      const info = getItemInfo(b);
-      return `<option value="${b.id}">[${b.type === 'income' ? '수익' : '비용'}] ${info.item} (${helpers.formatCurrencyRaw(b.amount)}원)</option>`;
-    }).join('')}
+                  ${items.map(b => `<option value="${b.id}">[${b.type === 'income' ? '수익' : '비용'}] ${b.name} (${helpers.formatCurrencyRaw(b.amount)}원)</option>`).join('')}
                 </select>
               </div>
               <div class="form-group">
-                <label>전입 항목 (증가) <span class="required">*</span></label>
+                <label>전입 항목 <span class="required">*</span></label>
                 <select id="tf-to" class="form-control">
                   <option value="">-- 대상 선택 --</option>
-                  ${items.map(b => {
-      const info = getItemInfo(b);
-      return `<option value="${b.id}">[${b.type === 'income' ? '수익' : '비용'}] ${info.item} (${helpers.formatCurrencyRaw(b.amount)}원)</option>`;
-    }).join('')}
+                  ${items.map(b => `<option value="${b.id}">[${b.type === 'income' ? '수익' : '비용'}] ${b.name} (${helpers.formatCurrencyRaw(b.amount)}원)</option>`).join('')}
                 </select>
               </div>
               <div class="form-group">
-                <label>전용 금액 (원) <span class="required">*</span></label>
+                <label>전용 금액 <span class="required">*</span></label>
                 <input type="text" id="tf-amount" class="form-control" placeholder="0" oninput="helpers.handleAmountInput(this)">
               </div>
               <div class="form-group full">
                 <label>전용 사유</label>
-                <input type="text" id="tf-reason" class="form-control" placeholder="전용 사유를 입력하세요">
+                <input type="text" id="tf-reason" class="form-control" placeholder="사유">
               </div>
             </div>
           </div>
@@ -653,22 +671,10 @@ const BudgetModule = (() => {
   }
 
   function getItemInfo(budgetItem) {
-    const type = budgetItem.type;
-    const struct = BUDGET_STRUCTURE[type];
-    if (!struct) return { section: '', category: '', item: budgetItem.name || '' };
-    for (const sec of struct.sections) {
-      for (const cat of sec.categories) {
-        for (const item of cat.items) {
-          if (item.code === budgetItem.itemCode) {
-            return { section: sec.name, category: cat.name, item: item.name };
-          }
-        }
-      }
-    }
-    return { section: '', category: '', item: budgetItem.name || '' };
+    const info = getItemInfoByCode(budgetItem.type, budgetItem.itemCode);
+    return { section: info.section, category: info.category, item: info.item };
   }
 
-  // ── 연쇄 셀렉트 박스 ──
   function onTypeChange() {
     const type = document.getElementById('bgt-type').value;
     const secSelect = document.getElementById('bgt-section');
@@ -715,19 +721,13 @@ const BudgetModule = (() => {
     document.getElementById('bgt-type').value = 'income';
     document.getElementById('bgt-amount').value = '';
     document.getElementById('bgt-note').value = '';
-
     document.getElementById('bgt-amount-group').style.display = 'block';
     document.getElementById('bgt-edit-calc-area').style.display = 'none';
-    document.getElementById('bgt-existing-amount').value = '0';
-    document.getElementById('bgt-add-amount').value = '';
-    document.getElementById('bgt-calc-total').textContent = '0원';
-
     onTypeChange();
   }
 
   function openAddModalPreFilled(type, secIdx, catIdx, itemCode) {
     helpers.openModal('budget-modal');
-    document.getElementById('budget-modal-title').textContent = '예산 항목 추가';
     document.getElementById('bgt-id').value = '';
     document.getElementById('bgt-type').value = type;
     onTypeChange();
@@ -738,12 +738,8 @@ const BudgetModule = (() => {
     document.getElementById('bgt-item').value = itemCode;
     document.getElementById('bgt-amount').value = '';
     document.getElementById('bgt-note').value = '';
-
     document.getElementById('bgt-amount-group').style.display = 'block';
     document.getElementById('bgt-edit-calc-area').style.display = 'none';
-    document.getElementById('bgt-existing-amount').value = '0';
-    document.getElementById('bgt-add-amount').value = '';
-    document.getElementById('bgt-calc-total').textContent = '0원';
   }
 
   function openEditModal(id) {
@@ -756,26 +752,21 @@ const BudgetModule = (() => {
     onTypeChange();
 
     const struct = BUDGET_STRUCTURE[item.type];
-    if (struct && item.itemCode) {
-      for (let si = 0; si < struct.sections.length; si++) {
-        const sec = struct.sections[si];
-        for (let ci = 0; ci < sec.categories.length; ci++) {
-          const cat = sec.categories[ci];
-          for (const it of cat.items) {
-            if (it.code === item.itemCode) {
-              document.getElementById('bgt-section').value = si;
-              onSectionChange();
-              document.getElementById('bgt-category').value = ci;
-              onCategoryChange();
-              document.getElementById('bgt-item').value = item.itemCode;
-            }
+    for (let si = 0; si < struct.sections.length; si++) {
+      for (let ci = 0; ci < struct.sections[si].categories.length; ci++) {
+        for (const it of struct.sections[si].categories[ci].items) {
+          if (it.code === item.itemCode) {
+            document.getElementById('bgt-section').value = si;
+            onSectionChange();
+            document.getElementById('bgt-category').value = ci;
+            onCategoryChange();
+            document.getElementById('bgt-item').value = item.itemCode;
           }
         }
       }
     }
-    document.getElementById('bgt-amount').value = item.amount || '';
+    document.getElementById('bgt-amount').value = helpers.formatCurrencyRaw(item.amount || 0);
     document.getElementById('bgt-note').value = item.note || '';
-
     document.getElementById('bgt-amount-group').style.display = 'none';
     document.getElementById('bgt-edit-calc-area').style.display = 'block';
     document.getElementById('bgt-existing-amount').value = helpers.formatCurrencyRaw(item.amount || 0);
@@ -795,51 +786,38 @@ const BudgetModule = (() => {
     const itemCode = document.getElementById('bgt-item').value;
     const amount = helpers.parseAmount(document.getElementById('bgt-amount').value);
     if (!itemCode) { helpers.showToast('관-항-목을 모두 선택해 주세요.', 'error'); return; }
-    if (!amount || amount <= 0) { helpers.showToast('올바른 예산액을 입력해 주세요.', 'error'); return; }
-
+    if (amount === undefined || isNaN(amount)) { helpers.showToast('금액을 입력해 주세요.', 'error'); return; }
     const type = document.getElementById('bgt-type').value;
     const info = getItemInfoByCode(type, itemCode);
 
     const item = {
-      id: document.getElementById('bgt-id').value || null,
-      type,
-      itemCode,
-      name: info.item,
-      section: info.section,
-      category: info.category,
-      amount,
-      year: _selectedYear,
-      note: document.getElementById('bgt-note').value.trim()
+      id: document.getElementById('bgt-id').value || 'bgt_' + Date.now(),
+      type, itemCode, name: info.item, section: info.section, category: info.category,
+      amount, year: _selectedYear, note: document.getElementById('bgt-note').value.trim()
     };
     db.saveBudgetItem(item);
     helpers.closeModal('budget-modal');
-    helpers.showToast('예산 항목이 저장되었습니다.');
     render();
   }
 
   function getItemInfoByCode(type, code) {
     const struct = BUDGET_STRUCTURE[type];
-    if (!struct) return { section: '', category: '', item: '' };
     for (const sec of struct.sections) {
       for (const cat of sec.categories) {
-        for (const item of cat.items) {
-          if (item.code === code) {
-            return { section: sec.name, category: cat.name, item: item.name };
-          }
-        }
+        const item = cat.items.find(i => i.code === code);
+        if (item) return { section: sec.name, category: cat.name, item: item.name };
       }
     }
     return { section: '', category: '', item: '' };
   }
 
   function deleteItem(id) {
-    if (!confirm('이 예산 항목을 삭제하시겠습니까?')) return;
+    if (!confirm('삭제하시겠습니까?')) return;
     db.deleteBudgetItem(id);
-    helpers.showToast('삭제되었습니다.', 'info');
     render();
   }
 
-  // ── 예산 전용 ──
+  // ── 예산 전용 (Restore missing functions) ──
   function openTransferModal() {
     render();
     setTimeout(() => helpers.openModal('transfer-modal'), 100);
@@ -882,104 +860,11 @@ const BudgetModule = (() => {
     render();
   }
 
-  function printReport() {
-    const allItems = db.getBudgetItems();
-    const items = allItems.filter(b => (b.year || 2026) === _selectedYear);
-    const incomeItems = items.filter(b => b.type === 'income');
-    const expenseItems = items.filter(b => b.type === 'expense');
-    const reserveItems = items.filter(b => b.type === 'reserve');
-
-    const totalIncome = incomeItems.reduce((s, b) => s + (b.amount || 0), 0);
-    const totalExpense = expenseItems.reduce((s, b) => s + (b.amount || 0), 0);
-    const totalReserve = reserveItems.reduce((s, b) => s + (b.amount || 0), 0);
-    const totalDiff = totalIncome - (totalExpense + totalReserve);
-
-    const periodStr = `${_selectedYear}. 03. 01 ~ ${_selectedYear + 1}. 02. 28`;
-
-    const printContainer = document.createElement('div');
-    printContainer.id = 'temp-print-area';
-    printContainer.innerHTML = `
-      <div class="print-container">
-        <div class="report-form-header">
-          <div class="report-logo-section">
-            <img src="img/logo_Black.png" alt="예원예술대학교 로고" class="report-university-logo">
-          </div>
-          <div class="report-title-section">
-            <h1 class="report-main-title">운 영 계 산 서</h1>
-            <p class="report-period">
-              회계연도: ${periodStr}
-            </p>
-          </div>
-          <div class="report-empty-space"></div>
-        </div>
-
-        <div class="report-info-bar">
-          <span>예원예술대학교 산학협력단</span>
-          <span class="report-unit">(단위: 원)</span>
-        </div>
-
-        <div class="card no-shadow no-border" style="margin-top: 20px !important;">
-          <h4 class="card-title text-success">📥 운영수익</h4>
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th style="width:20%">관</th> <th style="width:20%">항</th> <th style="width:20%">목</th> 
-                <th style="width:20%">예산액</th> <th>산출근거</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${renderGroupedRows(incomeItems, 'income', true)}
-              <tr class="total-row">
-                <td colspan="3" class="text-right">운영수익 합계</td>
-                <td class="text-right"><strong>${helpers.formatCurrencyRaw(totalIncome)}</strong></td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="card no-shadow no-border" style="margin-top: 30px !important;">
-          <h4 class="card-title text-danger">📤 운영비용</h4>
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th style="width:20%">관</th> <th style="width:20%">항</th> <th style="width:20%">목</th> 
-                <th style="width:20%">예산액</th> <th>산출근거</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${renderGroupedRows(expenseItems, 'expense', true)}
-              ${renderGroupedRows(reserveItems, 'reserve', true)}
-              <tr class="total-row">
-                <td colspan="3" class="text-right">운영비용 합계 (예비비 포함)</td>
-                <td class="text-right"><strong>${helpers.formatCurrencyRaw(totalExpense + totalReserve)}</strong></td>
-                <td></td>
-              </tr>
-              <tr class="total-row">
-                <td colspan="3" class="text-right">📊 운영차액 (수익 - 비용)</td>
-                <td class="text-right"><strong>${helpers.formatCurrencyRaw(totalDiff)}</strong></td>
-                <td class="text-sm">차기이월 예산</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="report-footer-school">
-          예원예술대학교 산학협력단
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(printContainer);
-    window.print();
-    document.body.removeChild(printContainer);
-  }
-
   return {
     render, openAddModal, openEditModal, openAddModalPreFilled, saveItem, deleteItem,
     onTypeChange, onSectionChange, onCategoryChange,
-    openTransferModal, executeTransfer, changeYear, printReport,
-    getItemInfo, updateCalculatedAmount, BUDGET_STRUCTURE
+    openTransferModal, executeTransfer, changeYear, updateCalculatedAmount,
+    getItemInfo, BUDGET_STRUCTURE, _selectedYear
   };
 })();
 
