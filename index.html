@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>예원예술대학교 산학협력단 | 회계관리 시스템</title>
-    <meta name="description" content="예원예술대학교 산학협력단 간편 예결산 및 지출결의 관리 시스템">
+    <title>?덉썝?덉닠??숆탳 ?고븰?묐젰??| ?뚭퀎愿由??쒖뒪??/title>
+    <meta name="description" content="?덉썝?덉닠??숆탳 ?고븰?묐젰??媛꾪렪 ?덇껐??諛?吏異쒓껐??愿由??쒖뒪??>
 
-    <!-- 외부 라이브러리 -->
+    <!-- ?몃? ?쇱씠釉뚮윭由?-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-    <!-- 스타일 -->
+    <!-- ?ㅽ???-->
     <link rel="stylesheet" href="style.98d9839e.css">
 
     <!-- FullCalendar CSS -->
@@ -29,51 +29,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style id="main-style">
-        /* 인쇄 참조용 */
+        /* ?몄뇙 李몄“??*/
     </style>
 </head>
 
 <body>
-    <!-- 전역 에러 캡처 (진단용) -->
+    <!-- ?꾩뿭 ?먮윭 罹≪쿂 (吏꾨떒?? -->
     <script>
         window.onerror = function(msg, url, line, col, error) {
-            const errorMsg = "🚨 시스템 오류 발생!\n\n메시지: " + msg + "\n위치: " + url + ":" + line + ":" + col + "\n\n이 메시지를 캡처하여 전달해 주세요.";
+            const errorMsg = "?슚 ?쒖뒪???ㅻ쪟 諛쒖깮!\n\n硫붿떆吏: " + msg + "\n?꾩튂: " + url + ":" + line + ":" + col + "\n\n??硫붿떆吏瑜?罹≪쿂?섏뿬 ?꾨떖??二쇱꽭??";
             alert(errorMsg);
             console.error(error);
             return false;
         };
         window.onunhandledrejection = function(event) {
-            const errorMsg = "🚨 비동기 처리 오류 발생!\n\n원인: " + (event.reason?.message || event.reason) + "\n\n이 메시지를 캡처하여 전달해 주세요.";
+            const errorMsg = "?슚 鍮꾨룞湲?泥섎━ ?ㅻ쪟 諛쒖깮!\n\n?먯씤: " + (event.reason?.message || event.reason) + "\n\n??硫붿떆吏瑜?罹≪쿂?섏뿬 ?꾨떖??二쇱꽭??";
             alert(errorMsg);
             return false;
         };
     </script>
 
-    <!-- ══════════════════════════════════════
-     로그인 화면
-══════════════════════════════════════ -->
+    <!-- ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+     濡쒓렇???붾㈃
+?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
     <div id="login-screen">
 
         <div class="login-container">
           <div class="login-card">
 
-            <!-- ▲ 상단 장식 배너 -->
+            <!-- ???곷떒 ?μ떇 諛곕꼫 -->
             <div class="login-card-top">
               <div class="login-deco-circle-1"></div>
               <div class="login-deco-circle-2"></div>
               <div class="login-deco-circle-3"></div>
 
               <div class="login-logo">
-                <img src="img/logo.png" alt="예원예술대학교"
+                <img src="img/logo.png" alt="?덉썝?덉닠??숆탳"
                   onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='inline-flex';">
-                <div id="logo-fallback" class="login-logo-fallback" style="display:none;">🏛️</div>
+                <div id="logo-fallback" class="login-logo-fallback" style="display:none;">?룢截?/div>
               </div>
 
               <div class="login-header-animate">
-                <h1 class="login-title">Accounting ERP System<span>산학협력단 회계관리 시스템</span></h1>
+                <h1 class="login-title">Accounting ERP System<span>?고븰?묐젰???뚭퀎愿由??쒖뒪??/span></h1>
               </div>
 
-              <!-- 움직이는 물결 분리선 -->
+              <!-- ?吏곸씠??臾쇨껐 遺꾨━??-->
               <div class="login-wave-divider">
                 <svg class="login-animated-waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                   viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
@@ -90,37 +90,37 @@
               </div>
             </div>
 
-            <!-- ▼ 하단 폼 영역 -->
+            <!-- ???섎떒 ???곸뿭 -->
             <div class="login-card-bottom">
               <div class="login-error" id="login-error"></div>
 
               <div class="login-form">
                 <div class="form-group">
-                  <label for="login-username">사번</label>
+                  <label for="login-username">?щ쾲</label>
                   <div class="login-input-wrapper">
                     <i class="fa-solid fa-user login-input-icon"></i>
-                    <input type="text" id="login-username" class="login-input" placeholder="사번을 입력하세요"
+                    <input type="text" id="login-username" class="login-input" placeholder="?щ쾲???낅젰?섏꽭??
                       autocomplete="username"
                       onkeydown="if(event.key==='Enter') document.getElementById('login-password').focus()">
                   </div>
                 </div>
                 <div class="form-group">
-                  <label for="login-password">비밀번호</label>
+                  <label for="login-password">鍮꾨?踰덊샇</label>
                   <div class="login-input-wrapper password-group">
                     <i class="fa-solid fa-lock login-input-icon"></i>
-                    <input type="password" id="login-password" class="login-input" placeholder="비밀번호를 입력하세요"
+                    <input type="password" id="login-password" class="login-input" placeholder="鍮꾨?踰덊샇瑜??낅젰?섏꽭??
                       autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
                     <i class="fa-regular fa-eye-slash password-toggle" onclick="toggleLoginPassword(this)"></i>
                   </div>
                 </div>
                 <div class="security-info">
-                  <span class="security-badge"><i class="fa-solid fa-shield-halved"></i> 보안 로그인 활성화됨</span>
+                  <span class="security-badge"><i class="fa-solid fa-shield-halved"></i> 蹂댁븞 濡쒓렇???쒖꽦?붾맖</span>
                 </div>
                 <button class="login-btn" onclick="doLogin()">LOGIN</button>
               </div>
 
               <div class="login-footer">
-                계정이 없으시면 산학협력단에 문의하세요.
+                怨꾩젙???놁쑝?쒕㈃ ?고븰?묐젰?⑥뿉 臾몄쓽?섏꽭??
                 <div style="margin-top: 10px; opacity: 0.6; font-size: 11px; letter-spacing: 1px;">SYSTEM VERSION v24.25</div>
               </div>
             </div>
@@ -129,63 +129,63 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-     메인 레이아웃 (로그인 후 표시)
-══════════════════════════════════════ -->
+    <!-- ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+     硫붿씤 ?덉씠?꾩썐 (濡쒓렇?????쒖떆)
+?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 -->
     <div id="app-layout" class="app-layout" style="display: none;">
-        <!-- 사이드바 -->
+        <!-- ?ъ씠?쒕컮 -->
         <aside id="sidebar">
             <div class="sidebar-header">
                 <a class="sidebar-logo" href="#" onclick="App.navigate('schedule'); return false;">
                     <div class="sidebar-logo-icon">
                         <div class="full-logo-group">
-                            <img src="img/logo_white.png" alt="로고" class="sidebar-img-logo">
+                            <img src="img/logo_white.png" alt="濡쒓퀬" class="sidebar-img-logo">
                             <span class="sidebar-logo-divider"
                                 style="color: #ffffff !important; opacity: 1 !important; margin-top: -0.5mm; display: inline-block; vertical-align: middle;">|</span>
-                            <span class="sidebar-org-name">산학협력단</span>
+                            <span class="sidebar-org-name">?고븰?묐젰??/span>
                         </div>
                         <div class="mini-logo">
-                            <img src="img/logo.png" alt="미니 로고" style="width: 38px; height: auto;">
+                            <img src="img/logo.png" alt="誘몃땲 濡쒓퀬" style="width: 38px; height: auto;">
                         </div>
                     </div>
                 </a>
             </div>
-            <button id="mini-toggle" onclick="App.toggleMiniSidebar()" aria-label="사이드바 접기">
-                <span class="toggle-text">메뉴감추기</span>
+            <button id="mini-toggle" onclick="App.toggleMiniSidebar()" aria-label="?ъ씠?쒕컮 ?묎린">
+                <span class="toggle-text">硫붾돱媛먯텛湲?/span>
                 <i class="fa-solid fa-angles-left"></i>
             </button>
 
             <div class="sidebar-body">
                 <ul class="nav-list" id="sidebar-nav">
-                    <!-- app.f4002ebb.js에서 동적 생성 -->
+                    <!-- app.f4002ebb.js?먯꽌 ?숈쟻 ?앹꽦 -->
                 </ul>
             </div>
 
             <div class="sidebar-footer" id="sidebar-profile">
-                <!-- app.f4002ebb.js에서 동적 생성 -->
+                <!-- app.f4002ebb.js?먯꽌 ?숈쟻 ?앹꽦 -->
             </div>
 
-            <!-- 스크롤 유도 아이콘 -->
+            <!-- ?ㅽ겕濡??좊룄 ?꾩씠肄?-->
             <div class="sidebar-scroll-indicator">
                 <i class="fa-solid fa-chevron-down"></i>
             <div class="sidebar-version" style="position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 10px; opacity: 0.3; color: #fff; pointer-events: none;">v23.1</div>
         </aside>
 
-        <!-- 메인 영역 -->
+        <!-- 硫붿씤 ?곸뿭 -->
         <div class="main-area">
-            <!-- 헤더 -->
+            <!-- ?ㅻ뜑 -->
             <header id="app-header">
                 <div class="header-left">
-                    <button id="sidebar-toggle" aria-label="메뉴">☰</button>
+                    <button id="sidebar-toggle" aria-label="硫붾돱">??/button>
                     <div class="header-title-group">
                         <h1 class="header-main-title">
-                            <span class="title-ko">회계관리시스템</span>
+                            <span class="title-ko">?뚭퀎愿由ъ떆?ㅽ뀥</span>
                             <span class="title-divider">|</span>
                             <span class="title-en">Accounting ERP System</span>
                             <span class="badge" style="margin-left: 10px; font-size: 11px; background: #60a5fa; color: #ffffff; padding: 2px 10px; border-radius: 12px; vertical-align: middle; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.3); letter-spacing: 0.5px;">v24.25</span>
                             <span id="storage-usage-info"
                                 style="margin-left:12px; font-size:11px; color:#64748b; vertical-align:middle;">
-                                <i class="fa-solid fa-hard-drive"></i> 로딩 중...
+                                <i class="fa-solid fa-hard-drive"></i> 濡쒕뵫 以?..
                             </span>
                         </h1>
                     </div>
@@ -193,20 +193,20 @@
                 <div class="header-right">
                     <span class="header-date" id="header-date"></span>
                     <div class="header-user" id="header-user-info"></div>
-                    <button class="btn-logout" onclick="Auth.logout()">로그아웃</button>
+                    <button class="btn-logout" onclick="Auth.logout()">濡쒓렇?꾩썐</button>
                     <button class="btn btn-ghost btn-sm" id="btn-backup-data"
                         style="display:none; margin-left: 10px; color: #10b981; border: 1px solid #10b981;"
-                        onclick="helpers.exportDatabaseBackup()" title="PC에 백업 파일 저장">💾 데이터 백업</button>
+                        onclick="helpers.exportDatabaseBackup()" title="PC??諛깆뾽 ?뚯씪 ???>?뮶 ?곗씠??諛깆뾽</button>
                     <button class="btn btn-ghost btn-sm" id="btn-restore-data"
                         style="display:none; color: #3b82f6; border: 1px solid #3b82f6;"
-                        onclick="document.getElementById('db-restore-input').click()" title="PC에서 데이터 복원">📂 데이터
-                        복원</button>
+                        onclick="document.getElementById('db-restore-input').click()" title="PC?먯꽌 ?곗씠??蹂듭썝">?뱛 ?곗씠??
+                        蹂듭썝</button>
                     <input type="file" id="db-restore-input" style="display:none" accept=".json"
                         onchange="helpers.importDatabaseBackup(event)">
 
                 </div>
 
-                <!-- 물결무늬 애니메이션 -->
+                <!-- 臾쇨껐臾대뒳 ?좊땲硫붿씠??-->
                 <div class="header-waves-container">
                     <svg class="header-waves" xmlns="http://www.w3.org/2000/svg"
                         xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none"
@@ -225,11 +225,11 @@
                 </div>
             </header>
 
-            <!-- 콘텐츠 -->
+            <!-- 肄섑뀗痢?-->
             <main id="app-content">
                 <div style="text-align:center; padding:80px 20px; color:#94a3b8;">
-                    <div style="font-size:48px; margin-bottom:16px;">⏳</div>
-                    <p>로딩 중...</p>
+                    <div style="font-size:48px; margin-bottom:16px;">??/div>
+                    <p>濡쒕뵫 以?..</p>
                 </div>
             </main>
         </div> <!-- /main-area -->
@@ -237,11 +237,11 @@
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.toggleSidebar()"></div>
 
-    <!-- 토스트 알림 -->
+    <!-- ?좎뒪???뚮┝ -->
     <div id="toast-container"></div>
 
-    <!-- 최상단 이동 버튼 -->
-    <button id="back-to-top" title="최상단으로 이동">▲ TOP</button>
+    <!-- 理쒖긽???대룞 踰꾪듉 -->
+    <button id="back-to-top" title="理쒖긽?⑥쑝濡??대룞">??TOP</button>
 
     <script src="utils/accounting-logic.414c9f0d.js"></script>
     <script src="utils/db.334168f7.js"></script>
@@ -268,7 +268,7 @@
     <script src="app.fddb5daa.js"></script>
 
     <script>
-        // 서비스 워커 등록 및 업데이트 로직
+        // ?쒕퉬???뚯빱 ?깅줉 諛??낅뜲?댄듃 濡쒖쭅
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then(reg => {
@@ -276,9 +276,9 @@
                         const installingWorker = reg.installing;
                         installingWorker.onstatechange = () => {
                             if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // 새로운 서비스 워커가 설치됨 -> 사용자에게 알리거나 자동 리로드
+                                // ?덈줈???쒕퉬???뚯빱媛 ?ㅼ튂??-> ?ъ슜?먯뿉寃??뚮━嫄곕굹 ?먮룞 由щ줈??
                                 console.log('New content is available; please refresh.');
-                                if (confirm('새로운 버전이 업데이트되었습니다. 페이지를 새로고침하시겠습니까?')) {
+                                if (confirm('?덈줈??踰꾩쟾???낅뜲?댄듃?섏뿀?듬땲?? ?섏씠吏瑜??덈줈怨좎묠?섏떆寃좎뒿?덇퉴?')) {
                                     location.reload();
                                 }
                             }
@@ -287,7 +287,7 @@
                 });
             });
 
-            // 컨트롤러가 바뀌면 (새 sw가 활성화되면) 자동 새로고침
+            // 而⑦듃濡ㅻ윭媛 諛붾뚮㈃ (??sw媛 ?쒖꽦?붾릺硫? ?먮룞 ?덈줈怨좎묠
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
@@ -297,16 +297,16 @@
             });
         }
 
-        // 초기화 및 라우팅 제어
+        // 珥덇린??諛??쇱슦???쒖뼱
         (async function init() {
             try {
-                // 1. D1에서 모든 데이터 로드 (LocalStorage 대신 사용)
+                // 1. D1?먯꽌 紐⑤뱺 ?곗씠??濡쒕뱶 (LocalStorage ????ъ슜)
                 await db.init();
 
-                // 2. 기본 관리자 계정 생성 (계정이 없을 경우)
+                // 2. 湲곕낯 愿由ъ옄 怨꾩젙 ?앹꽦 (怨꾩젙???놁쓣 寃쎌슦)
                 Auth.initDefaultAdmin();
 
-                // 3. 기존 세션 확인 및 자동 로그인
+                // 3. 湲곗〈 ?몄뀡 ?뺤씤 諛??먮룞 濡쒓렇??
                 if (Auth.isLoggedIn()) {
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('app-layout').style.display = 'flex';
@@ -314,15 +314,15 @@
                 }
             } catch (e) {
                 console.error('Core init failed:', e);
-                alert('시스템 초기화 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+                alert('?쒖뒪??珥덇린??以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??');
             }
         })();
 
         async function analyzeDraftWithAI(base64Data) {
             try {
-              helpers.showToast('이미지에서 텍스트를 인식하고 있습니다. 잠시만 기다려 주세요...', 'info', 6000);
+              helpers.showToast('?대?吏?먯꽌 ?띿뒪?몃? ?몄떇?섍퀬 ?덉뒿?덈떎. ?좎떆留?湲곕떎??二쇱꽭??..', 'info', 6000);
               
-              // Tesseract.js를 이용한 클라이언트 사이드 OCR
+              // Tesseract.js瑜??댁슜???대씪?댁뼵???ъ씠??OCR
               const result = await Tesseract.recognize(base64Data, 'kor+eng', {
                 logger: m => console.log(m)
               });
@@ -333,15 +333,15 @@
               let title = '';
               let docNo = '';
 
-              // 1. 제목 추출 (키워드 매칭)
-              const titleMatch = fullText.match(/제\s*목\s*[:\s]+([^\n]+)/) || fullText.match(/제목\s*[:\s]+([^\n]+)/);
+              // 1. ?쒕ぉ 異붿텧 (?ㅼ썙??留ㅼ묶)
+              const titleMatch = fullText.match(/??s*紐?s*[:\s]+([^\n]+)/) || fullText.match(/?쒕ぉ\s*[:\s]+([^\n]+)/);
               if (titleMatch) title = titleMatch[1].trim();
 
-              // 2. 문서번호(시행) 추출
-              const docNoMatch = fullText.match(/(?:시\s*행|시행)\s*[:\s]*([^\s(]+-[^\s(]+)/) || 
-                                 fullText.match(/(?:시\s*행|시행)\s*([가-힣a-zA-Z\s]*\([가-힣\s]*\))?(-|\s)*(\d+)/);
+              // 2. 臾몄꽌踰덊샇(?쒗뻾) 異붿텧
+              const docNoMatch = fullText.match(/(?:??s*???쒗뻾)\s*[:\s]*([^\s(]+-[^\s(]+)/) || 
+                                 fullText.match(/(?:??s*???쒗뻾)\s*([媛-?즑-zA-Z\s]*\([媛-??s]*\))?(-|\s)*(\d+)/);
               if (docNoMatch) {
-                  docNo = docNoMatch[0].replace(/시\s*행|시행/g, '').trim();
+                  docNo = docNoMatch[0].replace(/??s*???쒗뻾/g, '').trim();
               }
 
               let filledCount = 0;
@@ -355,18 +355,18 @@
               }
 
               if (filledCount > 0) {
-                helpers.showToast(`이미지에서 ${filledCount}개 정보를 인식했습니다.`, 'success');
+                helpers.showToast(`?대?吏?먯꽌 ${filledCount}媛??뺣낫瑜??몄떇?덉뒿?덈떎.`, 'success');
                 prepareVoucher(true);
               } else {
-                helpers.showToast('텍스트를 찾지 못했습니다. 화질이 좋은 사진으로 다시 시도해 주세요.', 'info');
+                helpers.showToast('?띿뒪?몃? 李얠? 紐삵뻽?듬땲?? ?붿쭏??醫뗭? ?ъ쭊?쇰줈 ?ㅼ떆 ?쒕룄??二쇱꽭??', 'info');
               }
             } catch (err) {
               console.error('OCR Failed:', err);
-              helpers.showToast('문자 인식에 실패했습니다. 수동으로 입력해 주세요.', 'warning');
+              helpers.showToast('臾몄옄 ?몄떇???ㅽ뙣?덉뒿?덈떎. ?섎룞?쇰줈 ?낅젰??二쇱꽭??', 'warning');
             }
           }
 
-        // 로그인 처리
+        // 濡쒓렇??泥섎━
         function doLogin() {
             const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
@@ -375,7 +375,7 @@
             errorEl.classList.remove('show');
 
             if (!username || !password) {
-                errorEl.textContent = '아이디와 비밀번호를 입력해 주세요.';
+                errorEl.textContent = '?꾩씠?붿? 鍮꾨?踰덊샇瑜??낅젰??二쇱꽭??';
                 errorEl.classList.add('show');
                 return;
             }
@@ -388,13 +388,13 @@
                 return;
             }
 
-            // 로그인 성공 → 앱 표시
+            // 濡쒓렇???깃났 ?????쒖떆
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-layout').style.display = 'flex';
             App.init();
         }
 
-        // 비밀번호 표시 토글
+        // 鍮꾨?踰덊샇 ?쒖떆 ?좉?
         function toggleLoginPassword(icon) {
             const input = document.getElementById('login-password');
             if (input.type === 'password') {
