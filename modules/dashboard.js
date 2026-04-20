@@ -104,8 +104,9 @@ const DashboardModule = (() => {
                 <th>책임자</th>
                 <th>업무담당</th>
                 <th class="text-right">총 예산</th>
+                <th class="text-right">수입</th>
                 <th class="text-right">지출</th>
-                <th class="text-right">잔액</th>
+                <th class="text-right">잔액(수입-지출)</th>
                 <th>집행률</th>
                 <th class="text-center">상태</th>
               </tr>
@@ -121,8 +122,9 @@ const DashboardModule = (() => {
                     <td>${proj?.manager || '-'}</td>
                     <td>${proj?.staff || '-'}</td>
                     <td class="text-right">${helpers.formatCurrencyRaw(s.budget)}원</td>
+                    <td class="text-right text-success">${helpers.formatCurrencyRaw(s.totalIncome)}원</td>
                     <td class="text-right text-danger">${helpers.formatCurrencyRaw(s.totalExpense)}원</td>
-                    <td class="text-right text-success">${helpers.formatCurrencyRaw(s.balance)}원</td>
+                    <td class="text-right" style="color:#2563eb; font-weight:600;">${helpers.formatCurrencyRaw(s.totalIncome - s.totalExpense)}원</td>
                     <td style="min-width:160px">
                       <div class="progress-bar-wrap">
                         <div class="progress-bar progress-${rateColor}" style="width:${Math.min(s.executionRate, 100)}%"></div>
