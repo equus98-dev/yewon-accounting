@@ -9,7 +9,7 @@ const App = (() => {
         projectBudget: { label: '과제(사업)별 예산 입력', icon: 'fa-solid fa-hand-holding-dollar', module: () => ProjectBudgetModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
         projects: { label: '과제(사업) 추가', icon: 'fa-solid fa-folder-plus', module: () => ProjectsModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
         projectAccounts: { label: '과제(사업)별 통장관리', icon: 'fa-solid fa-file-invoice-dollar', module: () => ProjectAccountsModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
-        upload: { label: '은행거래내역 업로드(장부 자동입력)', icon: 'fa-solid fa-file-excel', module: () => ExcelParserModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
+        upload: { label: '은행거래내역 관리', icon: 'fa-solid fa-file-excel', module: () => ExcelParserModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
         income: { label: '수입 입력', icon: 'fa-solid fa-file-import', module: () => LedgerModule.render('income'), roles: ['admin', 'user'], group: '장부(수입 지출 입력)' },
         expense: { label: '지출 입력', icon: 'fa-solid fa-file-export', module: () => LedgerModule.render('expense'), roles: ['admin', 'user'], group: '장부(수입 지출 입력)' },
         reports: { label: '재무보고서', icon: 'fa-solid fa-file-contract', module: () => ReportsModule.render(), roles: ['admin', 'user'], group: '산학협력단 전체예산관리' },

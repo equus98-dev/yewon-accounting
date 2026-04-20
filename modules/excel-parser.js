@@ -15,7 +15,7 @@ const ExcelParserModule = (() => {
     document.getElementById('app-content').innerHTML = `
       <div class="page-header">
         <div>
-          <h2 class="page-title">은행거래내역 업로드(장부 자동입력)</h2>
+          <h2 class="page-title">은행거래내역 관리</h2>
           <p class="page-subtitle">은행 거래내역을 엑셀로 업로드하거나 실시간 API로 가져와 장부에 등록합니다</p>
         </div>
         <div style="display:flex; gap:10px;">
