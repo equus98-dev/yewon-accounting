@@ -104,19 +104,49 @@ const db = {
     this._set(DB_KEYS.LEDGER, list);
     return entry;
   },
-  saveLedgerBatch(entries) {
+  saveLedgerBatch(entries, batchId) {
     const list = this._get(DB_KEYS.LEDGER);
     let added = 0;
+    const now = new Date().toISOString();
+    const finalBatchId = batchId || ('batch_' + Date.now());
+
     entries.forEach(entry => {
       if (!list.find(l => l.hash === entry.hash)) {
         entry.id = 'led_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-        entry.createdAt = new Date().toISOString();
+        entry.createdAt = now;
+        entry.batchId = finalBatchId;
         list.push(entry);
         added++;
       }
     });
     this._set(DB_KEYS.LEDGER, list);
-    return added;
+    return { added, batchId: finalBatchId };
+  },
+  getLedgerBatches() {
+    const all = this._get(DB_KEYS.LEDGER);
+    const batches = {};
+    all.forEach(e => {
+      if (e.batchId) {
+        if (!batches[e.batchId]) {
+          batches[e.batchId] = {
+            id: e.batchId,
+            count: 0,
+            date: e.createdAt,
+            sampleDesc: e.description
+          };
+        }
+        batches[e.batchId].count++;
+      }
+    });
+    return Object.values(batches).sort((a, b) => b.date.localeCompare(a.date));
+  },
+  deleteLedgerByBatch(batchId) {
+    if (!batchId) return 0;
+    const all = this._get(DB_KEYS.LEDGER);
+    const filtered = all.filter(e => e.batchId !== batchId);
+    const deletedCount = all.length - filtered.length;
+    this._set(DB_KEYS.LEDGER, filtered);
+    return deletedCount;
   },
   deleteLedgerEntry(id) {
     const list = this._get(DB_KEYS.LEDGER).filter(l => l.id !== id);

@@ -199,5 +199,67 @@ export async function onRequest(context) {
     }
   }
 
+  // 4.1. BankAPI 계좌 등록 (POST /api/bank/register)
+  if (path === '/api/bank/register' && request.method === 'POST') {
+    try {
+      const body = await request.json();
+      const apiKey = 'pk_live_9fbaad26f0fc1df5a53cb393396789ca';
+      const secretKey = 'sk_client_minimal_30d5882e7943a20642e57837ff8d9675';
+
+      const response = await fetch('https://api.bankapi.co.kr/v1/accounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}:${secretKey}`
+        },
+        body: JSON.stringify({
+          bankCode: body.bankCode,
+          accountNumber: body.accountNumber
+        })
+      });
+
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    }
+  }
+
+  // 4.2. BankAPI 거래내역 조회 (POST /api/bank/transactions)
+  if (path === '/api/bank/transactions' && request.method === 'POST') {
+    try {
+      const body = await request.json();
+      const apiKey = 'pk_live_9fbaad26f0fc1df5a53cb393396789ca';
+      const secretKey = 'sk_client_minimal_30d5882e7943a20642e57837ff8d9675';
+
+      const response = await fetch('https://api.bankapi.co.kr/v1/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}:${secretKey}`
+        },
+        body: JSON.stringify({
+          bankCode: body.bankCode,
+          accountNumber: body.accountNumber,
+          accountPassword: body.accountPassword,
+          residentNumber: body.residentNumber,
+          startDate: body.startDate, // YYYYMMDD
+          endDate: body.endDate     // YYYYMMDD
+        })
+      });
+
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    }
+  }
+
   return new Response('Not Found', { status: 404 });
 }

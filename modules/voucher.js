@@ -140,6 +140,8 @@ const VoucherModule = (() => {
                   
                   const isFullyApproved = Array.isArray(v.roles) && v.roles.every(r => v.approvals && v.approvals[r]);
                   const alreadyApproved = v.approvals && v.approvals[userRank];
+                  const hasComment = !!v.approverComment;
+                  const isModifiedSinceComment = !!v.isModifiedSinceComment;
 
                   // 결재 버튼 표시 조건: 승인이 필요하거나, 관리자이거나, 담당자 본인이면서 수기결재를 위해 상신 상태인 경우
                   const canShowApprovalBtn = (userRank && Array.isArray(v.roles) && v.roles.includes(userRank) && !alreadyApproved) || isAdmin || (userRank === '담당' && isAuthor && !isFullyApproved);
@@ -177,7 +179,11 @@ const VoucherModule = (() => {
                       <a href="javascript:void(0)" onclick="VoucherModule.viewVoucher('${v.id}')" style="color:var(--royal-blue); text-decoration:underline; cursor:pointer;">${v.id}</a>
                     </td>
                     <td style="max-width:200px; padding: 12px 16px;">
-                      <div class="text-truncate" style="color:var(--royal-blue); font-weight:600; margin-bottom:4px;" title="${v.projectName || ''}">${v.projectName || '-'}</div>
+                      <div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;">
+                        <div class="text-truncate" style="color:var(--royal-blue); font-weight:600; flex:1;" title="${v.projectName || ''}">${v.projectName || '-'}</div>
+                        ${hasComment ? `<span class="badge" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; font-size:10px; padding:1px 4px; border-radius:3px; white-space:nowrap;">💬 의견</span>` : ''}
+                        ${isModifiedSinceComment ? `<span class="badge" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:10px; padding:1px 4px; border-radius:3px; white-space:nowrap;">✨ 반영됨</span>` : ''}
+                      </div>
                       <div class="text-truncate" style="font-size:13px; color:#555;" title="${v.title || ''}">${v.title || '-'}</div>
                     </td>
                     <td class="text-center">
@@ -939,6 +945,8 @@ const allEntries = db.getLedger();
       createdAt: currentVoucher?.createdAt || new Date().toISOString(),
       authorId: currentVoucher?.authorId || currentUser?.username || currentUser?.id || '-',
       authorName: currentVoucher?.authorName || currentUser?.name || '-',
+      approverComment: currentVoucher?.approverComment || '',
+      isModifiedSinceComment: !!(currentVoucher?.approverComment),
       _saved: !!currentVoucher?._saved
     };
     renderVoucherPreview(currentVoucher);
@@ -1347,6 +1355,14 @@ const allEntries = db.getLedger();
             }
           </div>
         ` : '')}
+        ${v.approverComment ? `
+          <div style="margin-top:20px; border: 2px solid #fbbf24; border-radius: 8px; padding: 15px; background: #fffbeb;">
+            <div style="font-weight:bold; color:#92400e; margin-bottom:10px; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-comment-dots"></i> 결재권자 검토 의견 (보완요청 사항)
+            </div>
+            <div style="font-size:13px; color:#451a03; line-height:1.6; white-space:pre-wrap;">${v.approverComment}</div>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -1466,14 +1482,18 @@ const allEntries = db.getLedger();
             <button class="modal-close" style="background:none; border:none; font-size:24px; cursor:pointer;" onclick="document.getElementById('${modalId}').remove()">×</button>
           </div>
           <div class="modal-body" style="padding:20px; overflow-y:auto; flex:1; background:#f4f6f8;">
+            <div style="margin-bottom:15px; background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd;">
+              <label style="display:block; font-weight:700; margin-bottom:8px; font-size:14px; color:#334155;">검토 의견 (보완사항 등)</label>
+              <textarea id="approval-comment" class="form-control" style="width:100%; height:80px; font-size:14px; border:1px solid #cbd5e1;" placeholder="의견을 입력해 주세요."></textarea>
+            </div>
             <div class="card" style="padding:40px; background:#fff; color:#000; border:1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin:0;">
               ${docHtml}
             </div>
           </div>
           <div class="modal-footer" style="padding:15px 20px; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px; background:#fff; border-radius:0 0 8px 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); position:relative; z-index:10;">
-            <button class="btn btn-ghost" onclick="document.getElementById('${modalId}').remove()">닫기</button>
-            <button class="btn btn-primary" style="background:#f59e0b; border-color:#f59e0b;" onclick="VoucherModule.executeManualBypass('${id}'); document.getElementById('${modalId}').remove();">📝 수기결재 통과</button>
-            <button class="btn btn-primary" style="background:#2563eb;" onclick="VoucherModule.executeApproval('${id}', '${rank}'); document.getElementById('${modalId}').remove();">✏️ 결재 승인하기</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('${modalId}').remove()">취소</button>
+            <button class="btn" style="background:#ef4444; color:white;" onclick="VoucherModule.executeReturn('${id}', '${rank}', document.getElementById('approval-comment').value); document.getElementById('${modalId}').remove();">🛑 보완요청(반려)</button>
+            <button class="btn btn-primary" style="background:#2563eb;" onclick="VoucherModule.executeApproval('${id}', '${rank}', document.getElementById('approval-comment').value); document.getElementById('${modalId}').remove();">✏️ 결재 승인하기</button>
           </div>
         </div>
       </div>
@@ -1501,15 +1521,19 @@ const allEntries = db.getLedger();
     }
   }
 
-  function executeApproval(id, rank) {
+  function executeApproval(id, rank, comment = '') {
     if (!confirm(rank + ' 자격으로 결재를 승인하시겠습니까?')) return;
     const v = window.db.getVoucherById(id);
     if (!v) return;
     v.approvals = v.approvals || {};
     v.approvals[rank] = true;
 
-    v.approvalNames = v.approvalNames || {};
+    if (comment.trim()) {
+      v.approverComment = comment.trim();
+      v.isModifiedSinceComment = false;
+    }
 
+    v.approvalNames = v.approvalNames || {};
     const session = window.Auth?.getSession();
     if (session) {
       const currentUser = window.Auth?.getUsers().find(u => u.id === session.userId);
@@ -1523,7 +1547,29 @@ const allEntries = db.getLedger();
     }
 
     window.db.saveVoucher(v);
-    window.helpers.showToast('결재가 완료되었습니다.', 'success');
+    window.helpers.showToast('결재 승인 처리가 완료되었습니다.', 'success');
+    render();
+  }
+
+  function executeReturn(id, rank, comment) {
+    if (!comment.trim()) {
+      alert('보완요청(반려) 시에는 반드시 구체적인 의견을 작성해 주세요.');
+      return;
+    }
+    if (!confirm('해당 결의서에 대해 보완요청(반려) 처리를 하시겠습니까?')) return;
+
+    const v = window.db.getVoucherById(id);
+    if (!v) return;
+
+    v.approvals = { '담당': true };
+    v.approvalSignatures = { '담당': v.approvalSignatures ? v.approvalSignatures['담당'] : null };
+    v.approvalNames = { '담당': v.approvalNames ? v.approvalNames['담당'] : null };
+    
+    v.approverComment = comment.trim();
+    v.isModifiedSinceComment = false;
+
+    window.db.saveVoucher(v);
+    window.helpers.showToast('보완요청(반려) 처리가 완료되었습니다.', 'warning');
     render();
   }
 
@@ -1729,7 +1775,7 @@ const allEntries = db.getLedger();
     return { 
       render, openNewVoucher, editVoucher, toggleRole, handleFileDrop, handleFileChange, removeFile, 
       toggleEntry, changeType, filterEntries, prepareVoucher, saveVoucherToDb, saveAndExit,
-      viewVoucher, deleteVoucher, printVoucher, approveVoucher, executeApproval, executeManualBypass,
+      viewVoucher, deleteVoucher, printVoucher, approveVoucher, executeApproval, executeReturn, executeManualBypass,
       cancelApproval, executeCancelApproval, addPaymentRow, removePaymentRow, removeLastPaymentRow,
       handleSearch
     };

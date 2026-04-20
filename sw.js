@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yewon-erp-v26.21';
+const CACHE_NAME = 'yewon-erp-v26.22';
 
 // 서비스 워커 설치 시 즉시 활성화
 self.addEventListener('install', (event) => {
