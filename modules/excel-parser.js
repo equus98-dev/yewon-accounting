@@ -94,35 +94,35 @@ const ExcelParserModule = (() => {
             <p class="hint-text">💡 은행마다 다른 엑셀 컬럼 위치를 저장해 두면, 다음에 업로드 시 자동으로 적용됩니다.</p>
             <div class="form-grid" id="config-form">
               <div class="form-group">
-                <label>은행명 <span class="required">*</span></label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">은행명 <span class="required">*</span></label>
                 <input type="text" id="cfg-bank-name" class="form-control" placeholder="예: 국민은행, 우리은행">
               </div>
               <div class="form-group">
-                <label>헤더 행 번호 (1부터 시작)</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">헤더 행 번호 (1부터 시작)</label>
                 <input type="number" id="cfg-header-row" class="form-control" value="1" min="1">
               </div>
               <div class="form-group">
-                <label>날짜 컬럼 (예: A, B, 0, 1)</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">날짜 컬럼 (예: A, B, 0, 1)</label>
                 <input type="text" id="cfg-col-date" class="form-control" placeholder="A">
               </div>
               <div class="form-group">
-                <label>적요 컬럼</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">적요 컬럼</label>
                 <input type="text" id="cfg-col-desc" class="form-control" placeholder="B">
               </div>
               <div class="form-group">
-                <label>입금 컬럼</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">입금 컬럼</label>
                 <input type="text" id="cfg-col-income" class="form-control" placeholder="C">
               </div>
               <div class="form-group">
-                <label>출금 컬럼</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">출금 컬럼</label>
                 <input type="text" id="cfg-col-expense" class="form-control" placeholder="D">
               </div>
               <div class="form-group">
-                <label>잔액 컬럼 (선택)</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">잔액 컬럼 (선택)</label>
                 <input type="text" id="cfg-col-balance" class="form-control" placeholder="E">
               </div>
               <div class="form-group">
-                <label>계좌번호 컬럼 (선택)</label>
+                <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">계좌번호 컬럼 (선택)</label>
                 <input type="text" id="cfg-col-account" class="form-control" placeholder="F">
               </div>
             </div>
@@ -519,7 +519,7 @@ const ExcelParserModule = (() => {
         <h4 class="section-title">📁 은행 설정 선택</h4>
         <div class="form-row">
           <div class="form-group">
-            <label>은행 설정</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">은행 설정</label>
             <select id="bank-config-select" class="form-control" onchange="ExcelParserModule.selectConfig(this.value)">
               <option value="">-- 은행 설정을 선택하세요 --</option>
               ${configs.map(c => `<option value="${c.id}">${c.bankName}</option>`).join('')}
@@ -527,7 +527,7 @@ const ExcelParserModule = (() => {
             </select>
           </div>
           <div class="form-group">
-            <label>대상 과제 (미선택 시 계좌번호로 자동 배정)</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">대상 과제 (미선택 시 계좌번호로 자동 배정)</label>
             <select id="upload-project-select" class="form-control">
               <option value="">-- 계좌번호로 자동 배정 --</option>
               ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
@@ -571,7 +571,7 @@ const ExcelParserModule = (() => {
         <p class="hint-text" style="margin-bottom:15px;">💡 입력하신 비밀번호는 서버에 저장되지 않고 1회성 조회용으로만 사용됩니다.</p>
         <div class="form-grid">
           <div class="form-group">
-            <label>은행 선택 <span class="required">*</span></label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">은행 선택 <span class="required">*</span></label>
             <select id="api-bank-code" class="form-control">
               <option value="NH">농협은행 (NH)</option>
               <option value="KB">국민은행 (KB)</option>
@@ -587,27 +587,27 @@ const ExcelParserModule = (() => {
             </select>
           </div>
           <div class="form-group">
-            <label>계좌번호 <span class="required">*</span></label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">계좌번호 <span class="required">*</span></label>
             <input type="text" id="api-account-no" class="form-control" placeholder="숫자만 입력">
           </div>
           <div class="form-group">
-            <label>계좌 비밀번호 (4자리) <span class="required">*</span></label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">계좌 비밀번호 (4자리) <span class="required">*</span></label>
             <input type="password" id="api-account-pw" class="form-control" maxlength="4" placeholder="****">
           </div>
           <div class="form-group">
-            <label>주민(사업자)번호 앞 6자리 <span class="required">*</span></label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">주민(사업자)번호 앞 6자리 <span class="required">*</span></label>
             <input type="text" id="api-resident-no" class="form-control" maxlength="6" placeholder="예: 800101">
           </div>
           <div class="form-group">
-            <label>조회 시작일</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">조회 시작일</label>
             <input type="date" id="api-start-date" class="form-control" value="${startDate}">
           </div>
           <div class="form-group">
-            <label>조회 종료일</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">조회 종료일</label>
             <input type="date" id="api-end-date" class="form-control" value="${today}">
           </div>
           <div class="form-group">
-            <label>대상 과제 배정</label>
+            <label style="display: inline-block; background: #334155; color: #fff; padding: 2px 10px; border-radius: 4px; margin-bottom: 8px; font-weight: 600; font-size: 13px;">대상 과제 배정</label>
             <select id="api-project-id" class="form-control">
               <option value="">-- 계좌번호로 자동 배정 --</option>
               ${projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
