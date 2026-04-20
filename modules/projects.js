@@ -91,7 +91,7 @@ const ProjectsModule = (() => {
           <td class="text-right">${helpers.formatCurrencyRaw(p.totalBudget)}원</td>
           <td class="text-right text-success">${helpers.formatCurrencyRaw(stats?.totalIncome)}원</td>
           <td class="text-right text-danger">${helpers.formatCurrencyRaw(stats?.totalExpense)}원</td>
-          <td class="text-right" style="color:#2563eb; font-weight:600;">${helpers.formatCurrencyRaw((stats?.totalIncome || 0) - (stats?.totalExpense || 0))}원</td>
+          <td class="text-right" style="color:${((stats?.totalIncome || 0) - (stats?.totalExpense || 0)) < 0 ? '#e11d48' : '#2563eb'}; font-weight:600;">${((stats?.totalIncome || 0) - (stats?.totalExpense || 0)) < 0 ? '-' : ''}${helpers.formatCurrencyRaw((stats?.totalIncome || 0) - (stats?.totalExpense || 0))}원</td>
           <td class="text-center">
             <div class="progress-bar-wrap">
               <div class="progress-bar" style="width:${Math.min(stats?.executionRate || 0, 100)}%"></div>
