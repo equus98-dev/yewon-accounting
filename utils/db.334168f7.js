@@ -9,7 +9,8 @@ const DB_KEYS = {
   VOUCHERS: 'yw_vouchers',
   PROJECT_BUDGET: 'yw_project_budget',
   SCHEDULES: 'yw_schedules',
-  ASSETS: 'yw_assets'
+  ASSETS: 'yw_assets',
+  MAINTENANCE: 'yw_maintenance'
 };
 
 const db = {
@@ -382,6 +383,27 @@ const db = {
       console.error('Error fetching R2 usage:', e);
     }
     return { totalUsage: 0 };
+  },
+
+  // ───── Maintenance Tickets (유지보수 게시판) ─────
+  getMaintenanceTickets() { return this._get(DB_KEYS.MAINTENANCE); },
+  saveMaintenanceTicket(ticket) {
+    const list = this.getMaintenanceTickets();
+    if (!ticket.id) {
+      ticket.id = 'mnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      ticket.createdAt = new Date().toISOString();
+      list.push(ticket);
+    } else {
+      const idx = list.findIndex(t => t.id === ticket.id);
+      if (idx !== -1) list[idx] = ticket;
+      else list.push(ticket);
+    }
+    this._set(DB_KEYS.MAINTENANCE, list);
+    return ticket;
+  },
+  deleteMaintenanceTicket(id) {
+    const list = this.getMaintenanceTickets().filter(t => t.id !== id);
+    this._set(DB_KEYS.MAINTENANCE, list);
   }
 };
 

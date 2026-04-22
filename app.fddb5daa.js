@@ -9,12 +9,13 @@ const App = (() => {
         projectBudget: { label: '과제(사업)별 예산 입력', icon: 'fa-solid fa-hand-holding-dollar', module: () => ProjectBudgetModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
         projects: { label: '과제(사업) 추가', icon: 'fa-solid fa-folder-plus', module: () => ProjectsModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
         projectAccounts: { label: '과제(사업)별 통장관리', icon: 'fa-solid fa-file-invoice-dollar', module: () => ProjectAccountsModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
-        upload: { label: '은행거래내역 업로드(장부 자동입력)', icon: 'fa-solid fa-file-excel', module: () => ExcelParserModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
+        upload: { label: '은행거래내역 관리', icon: 'fa-solid fa-file-excel', module: () => ExcelParserModule.render(), roles: ['admin', 'user'], group: '과제(사업)예산관리' },
         income: { label: '수입 입력', icon: 'fa-solid fa-file-import', module: () => LedgerModule.render('income'), roles: ['admin', 'user'], group: '장부(수입 지출 입력)' },
         expense: { label: '지출 입력', icon: 'fa-solid fa-file-export', module: () => LedgerModule.render('expense'), roles: ['admin', 'user'], group: '장부(수입 지출 입력)' },
         reports: { label: '재무보고서', icon: 'fa-solid fa-file-contract', module: () => ReportsModule.render(), roles: ['admin', 'user'], group: '산학협력단 전체예산관리' },
         assets: { label: '자산 관리', icon: 'fa-solid fa-boxes-stacked', module: () => AssetModule.render(), roles: ['admin', 'user'], group: '산학협력단 전체예산관리' },
         voucher: { label: '수입지출 결의서 작성 및 결재', icon: 'fa-solid fa-signature', module: () => VoucherModule.render(), roles: ['admin', 'user'], group: '장부(수입 지출 입력)' },
+        maintenance: { label: '유지보수 요청 게시판', icon: 'fa-solid fa-screwdriver-wrench', module: () => MaintenanceModule.render(), roles: ['admin', 'user'], group: '지원' },
         users: { label: '사용자 관리', icon: 'fa-solid fa-users-gear', module: () => UserManagementModule.render(), roles: ['admin'], group: '설정' },
         profile: { label: '마이페이지', icon: 'fa-solid fa-user-gear', module: () => ProfileModule.render(), roles: ['admin', 'user'], group: '설정' },
     };
@@ -129,9 +130,18 @@ const App = (() => {
 
                 // 재무보고서, 자산관리, 과제관리 메뉴는 연두색 강조 배경 적용
                 const specialClass = (['reports', 'assets', 'projects', 'projectAccounts', 'upload'].includes(key)) ? 'special-green-item' : '';
+                const maintenanceClass = (key === 'maintenance') ? 'maintenance-nav-item' : '';
+
+                // 유지보수 메뉴: 접수대기 건수 뱃지
+                if (key === 'maintenance') {
+                  try {
+                    const pendingCount = MaintenanceModule.getPendingCount();
+                    if (pendingCount > 0) badge = `<span class="nav-badge nav-badge-red">${pendingCount}</span>`;
+                  } catch(e) {}
+                }
 
                 return `
-          <li class="nav-item ${currentView === key ? 'active' : ''} ${specialClass}" data-view="${key}" onclick="App.navigate('${key}')" title="${v.label}">
+          <li class="nav-item ${currentView === key ? 'active' : ''} ${specialClass} ${maintenanceClass}" data-view="${key}" onclick="App.navigate('${key}')" title="${v.label}">
             <i class="nav-icon ${v.icon}"></i>
             <span class="nav-label">${v.label}</span>
             ${badge}
